@@ -104,7 +104,7 @@ public sealed class WordPressRestIndexParserTests
     [Fact]
     public void RejectsMalformedRestIndex()
     {
-        Assert.Throws<System.Text.Json.JsonException>(() =>
+        Assert.ThrowsAny<System.Text.Json.JsonException>(() =>
             WordPressRestIndexParser.Parse("{", RestRoot));
     }
 }
