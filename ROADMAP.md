@@ -27,14 +27,18 @@ This roadmap is the source of truth for release scope. Percentages are recalcula
 - [x] Nested settings JSON and clipboard export
 - [x] Automated tests for manifest, controls, repeaters, and serialization
 
-### v0.3.0 — Local preview and self-contained install · 86% · Current
+### v0.3.0 — Local preview and self-contained install · 100% · Complete
 - [x] Remove WordPress connection and remote preview flow from desktop UI and source
 - [x] Define static local HTML/CSS preview template fields in provider manifest
 - [x] Add safe placeholder substitution and HTML encoding
 - [x] Reject scripts, frames, remote URLs, event handlers and CSS imports in preview templates
 - [x] Add local Desktop/Tablet/Mobile viewport controls
 - [x] Configure self-contained single-file win-x64 publish
-- [ ] Windows CI validates local preview tests and complete offline installer
+- [x] Windows CI build passes with 0 warnings and 0 errors
+- [x] Automated test suite passes: 19/19
+- [x] Publish self-contained win-x64 desktop application
+- [x] Bundle the signed Microsoft WebView2 x64 Evergreen Standalone installer
+- [x] Compile and upload the single-file Inno Setup package
 
 ### v0.4.0 — Recipe Studio · 0%
 - [ ] Parse and edit recipe/page/section/widget structure
@@ -54,19 +58,33 @@ This roadmap is the source of truth for release scope. Percentages are recalcula
 - [ ] Versioned provider SDK and sample provider
 - [ ] Compatibility diagnostics and user documentation
 - [ ] Signed installer and verified upgrade/uninstall behavior
-- [ ] End-to-end QA on clean Windows machines with no .NET or WebView2 preinstalled
+- [ ] End-to-end QA on clean Windows machines with no .NET or WebView2 preinstalled (still required; CI has built the installer but has not executed it on a separate clean customer machine)
 
 ## Progress calculation
 
 Fixed release weights: v0.1.0 = 10%, v0.2.0 = 20%, v0.3.0 = 25%, v0.4.0 = 20%, v0.5.0 = 15%, v1.0.0 = 10%.
 
-Current implementation progress before Windows CI validation:
+Verified progress after Windows CI run #59:
 - v0.1.0: 100%
 - v0.2.0: 100%
-- v0.3.0: 6/7 = 85.7%
-- later releases: 0%
+- v0.3.0: 100%
+- v0.4.0: 0%
+- v0.5.0: 0%
+- v1.0.0: 0%
 
-Weighted total: **51%** (10% + 20% + 21.43% = 51.43%, rounded). The remaining v0.3 CI item is not counted as complete until the full Windows build, tests, and installer job succeeds.
+Weighted total: **55%** (10% + 20% + 25%). Remaining work is the Recipe Studio, local project persistence/export, and final clean-machine release QA.
+
+## Latest verified build
+- PR: #1 (Draft), branch `work/studio-foundation`
+- Source commit used for the installer: `e675b9ca7b45b07909d5af7d2fa84e1a4cce0100`
+- GitHub Actions run: [#59](https://github.com/AliasgharFahmidekar/lyra-studio/actions/runs/44760793190) — success
+- Tests: 19 passed, 0 failed
+- Build: 0 warnings, 0 errors
+- Installer artifact: `LyraStudio-Setup-win-x64` (artifact ID `14641113346`)
+- Artifact SHA-256: `5e683e9af2bfadb4c99b8a35275541688db088b429a2c87cb409523ed651cd29`
+- Artifact size in GitHub Actions: 360,598,489 bytes
+
+The installer has been compiled and uploaded. A separate clean-machine installation/run test has not yet been performed; it remains release QA, not a claimed pass.
 
 ## Progress reporting protocol
 
