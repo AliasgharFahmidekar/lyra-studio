@@ -31,4 +31,4 @@ dotnet run --project src/LyraStudio
 5. **Safe editing:** preview sessions are isolated/draft by default. Nothing is published or written back unless the user explicitly exports/applies changes.
 6. **Future-proof controls:** inspector controls are represented as typed schemas, including nested groups, repeaters, responsive values, conditions, and defaults.
 
-See [docs/architecture.md](docs/architecture.md) for the initial design.
+See [docs/architecture.md](docs/architecture.md) for the architecture, [ROADMAP.md](ROADMAP.md) for version scope and progress, and [docs/provider-manifest-v1.md](docs/provider-manifest-v1.md) for the import contract.\n\n## Current workflow\n\n1. Open Lyra Studio on Windows.\n2. Choose **Import Manifest** and select a provider JSON manifest.\n3. Browse discovered widgets or recipes.\n4. Select a widget to generate its settings inspector from the manifest schema.\n\nManifest import is read-only. It does not execute manifest content or modify WordPress. The current inspector edits common scalar controls and structured JSON values; the live preview and full visual repeater editor are scheduled in later releases.

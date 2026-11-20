@@ -12,7 +12,7 @@ public sealed record ControlDefinition
 {
     public required string Name { get; init; }
     public required string Label { get; init; }
-    public required ControlKind Kind { get; init; }
+    public string Kind { get; init; } = "unknown";
     public string? Description { get; init; }
     public bool Required { get; init; }
     public object? DefaultValue { get; init; }

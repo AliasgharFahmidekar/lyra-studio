@@ -13,11 +13,15 @@
      <Border Width="34" Height="34" CornerRadius="10" Background="#7567E8" Margin="0,0,11,0">
       <TextBlock Text="L" Foreground="White" FontSize="21" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
      </Border>
-     <StackPanel VerticalAlignment="Center"><TextBlock Text="Lyra Studio" FontSize="16" FontWeight="Bold" Foreground="#202432"/><TextBlock Text="WIDGET WORKSPACE" FontSize="9" Foreground="#8992A3"/></StackPanel>
+     <StackPanel VerticalAlignment="Center">
+      <TextBlock Text="Lyra Studio" FontSize="16" FontWeight="Bold" Foreground="#202432"/>
+      <TextBlock Text="WIDGET WORKSPACE" FontSize="9" Foreground="#8992A3"/>
+     </StackPanel>
     </StackPanel>
     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
      <Ellipse x:Name="ConnectionDot" Width="8" Height="8" Fill="#D59B38" Margin="0,0,8,0"/>
      <TextBlock x:Name="ConnectionLabel" Text="Not connected" Foreground="#697386" VerticalAlignment="Center" Margin="0,0,16,0"/>
+     <Button Content="Import Manifest" Background="#252B39" Margin="0,0,8,0" Click="ImportManifest_Click"/>
      <Button Content="Connect WordPress" Click="Connect_Click"/>
     </StackPanel>
    </Grid>
@@ -35,7 +39,7 @@
      </StackPanel>
      <StackPanel DockPanel.Dock="Bottom" Margin="8,0,8,10">
       <TextBlock Text="LYRA STUDIO" Foreground="#788195" FontSize="10" FontWeight="Bold"/>
-      <TextBlock Text="Desktop foundation · 0.1.0" Foreground="#9AA3B3" FontSize="11" Margin="0,5,0,0"/>
+      <TextBlock Text="Desktop foundation · 0.2.0" Foreground="#9AA3B3" FontSize="11" Margin="0,5,0,0"/>
      </StackPanel>
     </DockPanel>
    </Border>
@@ -43,37 +47,91 @@
     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
     <Grid Margin="2,0,2,16">
      <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-     <StackPanel><TextBlock x:Name="PageTitle" Text="Widget Library" FontSize="22" FontWeight="Bold" Foreground="#202432"/><TextBlock x:Name="PageSubtitle" Text="Connect a WordPress site to discover its Lyra widgets." Foreground="#8992A3" Margin="0,5,0,0"/></StackPanel>
-     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-      <Border Background="#FFFFFF" CornerRadius="7" Padding="12,8" Margin="0,0,8,0"><TextBlock Text="Preview: Desktop" Foreground="#626B7A"/></Border>
-      <Button Content="Refresh" Background="#252B39" Click="Refresh_Click"/>
+     <StackPanel>
+      <TextBlock x:Name="PageTitle" Text="Widget Library" FontSize="22" FontWeight="Bold" Foreground="#202432"/>
+      <TextBlock x:Name="PageSubtitle" Text="Import a provider manifest or connect a compatible WordPress provider." Foreground="#8992A3" Margin="0,5,0,0"/>
      </StackPanel>
+     <Button Grid.Column="1" Content="Refresh" Background="#252B39" VerticalAlignment="Center" Click="Refresh_Click"/>
     </Grid>
     <Border Grid.Row="1" Background="#FFFFFF" CornerRadius="12" BorderBrush="#E6E9EF" BorderThickness="1">
      <Grid>
-      <wv2:WebView2 x:Name="PreviewBrowser" Visibility="Collapsed"/>
       <StackPanel x:Name="EmptyState" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="430">
-       <Border Width="66" Height="66" CornerRadius="18" Background="#F0EEFF" HorizontalAlignment="Center" Margin="0,0,0,18"><TextBlock Text="⌘" FontSize="32" Foreground="#7567E8" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+       <Border Width="66" Height="66" CornerRadius="18" Background="#F0EEFF" HorizontalAlignment="Center" Margin="0,0,0,18">
+        <TextBlock Text="⌘" FontSize="32" Foreground="#7567E8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+       </Border>
        <TextBlock x:Name="EmptyTitle" Text="Your widget workspace is ready" FontSize="19" FontWeight="Bold" Foreground="#252B39" HorizontalAlignment="Center"/>
-       <TextBlock x:Name="EmptyDescription" Text="Connect a WordPress site to load the widgets and recipes that are actually available. Lyra Studio does not ship a hardcoded or simulated widget catalog." TextWrapping="Wrap" TextAlignment="Center" Foreground="#8992A3" Margin="0,10,0,20" LineHeight="22"/>
+       <TextBlock x:Name="EmptyDescription" Text="Import a provider manifest to discover widgets and recipes. The catalog is data-driven; this application does not ship a fixed list of Lyra widgets." TextWrapping="Wrap" TextAlignment="Center" Foreground="#8992A3" Margin="0,10,0,20" LineHeight="22"/>
        <Button Content="Connect WordPress site" Click="Connect_Click"/>
       </StackPanel>
+      <Grid x:Name="CatalogState" Visibility="Collapsed">
+       <Grid.ColumnDefinitions><ColumnDefinition Width="220"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+       <Border Grid.Column="0" Background="#FBFCFD" BorderBrush="#E8EAF0" BorderThickness="0,0,1,0">
+        <Grid Margin="12">
+         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+         <TextBlock x:Name="CatalogListTitle" Text="WIDGETS" FontSize="10" FontWeight="Bold" Foreground="#8992A3" Margin="4,4,4,12"/>
+         <ListBox x:Name="WidgetList" Grid.Row="1" DisplayMemberPath="Name" BorderThickness="0" Background="Transparent" SelectionChanged="WidgetList_SelectionChanged"/>
+         <ListBox x:Name="RecipeList" Grid.Row="1" DisplayMemberPath="Name" BorderThickness="0" Background="Transparent" Visibility="Collapsed" SelectionChanged="RecipeList_SelectionChanged"/>
+        </Grid>
+       </Border>
+       <Grid Grid.Column="1" Margin="18">
+        <wv2:WebView2 x:Name="PreviewBrowser" Visibility="Collapsed"/>
+        <StackPanel x:Name="SelectionInfo" VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="440" Visibility="Collapsed">
+         <Border Width="54" Height="54" CornerRadius="15" Background="#F0EEFF" HorizontalAlignment="Center" Margin="0,0,0,16">
+          <TextBlock Text="◈" FontSize="26" Foreground="#7567E8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+         </Border>
+         <TextBlock x:Name="PreviewTitle" Text="Select an item" FontSize="20" FontWeight="Bold" Foreground="#252B39" HorizontalAlignment="Center"/>
+         <TextBlock x:Name="PreviewSubtitle" Text="" Foreground="#8992A3" HorizontalAlignment="Center" Margin="0,7,0,12"/>
+         <Border Background="#F7F8FA" CornerRadius="8" Padding="14">
+          <TextBlock x:Name="PreviewMessage" Text="The live preview will become available when a compatible preview provider is connected. This catalog view does not simulate rendered Elementor output." Foreground="#697386" TextWrapping="Wrap" TextAlignment="Center" LineHeight="20"/>
+         </Border>
+        </StackPanel>
+       </Grid>
+      </Grid>
      </Grid>
     </Border>
    </Grid>
    <Border Grid.Column="2" Background="#FFFFFF" BorderBrush="#E8EAF0" BorderThickness="1,0,0,0">
-    <StackPanel Margin="18">
+    <Grid Margin="18">
+     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
      <TextBlock Text="INSPECTOR" FontSize="10" FontWeight="Bold" Foreground="#8992A3" Margin="0,5,0,18"/>
-     <TextBlock Text="Nothing selected" FontSize="16" FontWeight="Bold" Foreground="#252B39"/>
-     <TextBlock Text="Select a discovered widget or a recipe element to inspect its controls. The inspector will be generated from the provider's control schema, not maintained as a separate list in this app." TextWrapping="Wrap" Foreground="#8992A3" Margin="0,8,0,0" LineHeight="21"/>
-     <Border Background="#F7F8FA" CornerRadius="8" Padding="12" Margin="0,22,0,0">
-      <StackPanel><TextBlock Text="SUPPORTED CONTROL MODEL" FontSize="9" FontWeight="Bold" Foreground="#7567E8" Margin="0,0,0,8"/><TextBlock Text="Text · Number · Toggle · Select · Color · Link · Media · Repeater · Group · Responsive" TextWrapping="Wrap" Foreground="#667085" FontSize="11" LineHeight="18"/></StackPanel>
-     </Border>
-    </StackPanel>
+     <StackPanel x:Name="InspectorEmptyState" Grid.Row="1" VerticalAlignment="Top">
+      <TextBlock Text="Nothing selected" FontSize="16" FontWeight="Bold" Foreground="#252B39"/>
+      <TextBlock Text="Import a provider manifest and select a widget. Its controls will be generated from the metadata supplied by that provider." TextWrapping="Wrap" Foreground="#8992A3" Margin="0,8,0,0" LineHeight="21"/>
+      <Border Background="#F7F8FA" CornerRadius="8" Padding="12" Margin="0,22,0,0">
+       <StackPanel>
+        <TextBlock Text="SCHEMA-DRIVEN CONTROLS" FontSize="9" FontWeight="Bold" Foreground="#7567E8" Margin="0,0,0,8"/>
+        <TextBlock Text="Text · Number · Toggle · Select · Color · Link · Media · Repeater · Group · Responsive" TextWrapping="Wrap" Foreground="#667085" FontSize="11" LineHeight="18"/>
+       </StackPanel>
+      </Border>
+     </StackPanel>
+     <Grid x:Name="WidgetInspector" Grid.Row="1" Visibility="Collapsed">
+      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+      <TextBlock x:Name="InspectorTitle" Text="" FontSize="16" FontWeight="Bold" Foreground="#252B39" TextWrapping="Wrap"/>
+      <TextBlock x:Name="InspectorDescription" Grid.Row="1" Text="" FontSize="10" Foreground="#8992A3" TextWrapping="Wrap" Margin="0,6,0,14"/>
+      <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+       <StackPanel x:Name="InspectorFields"/>
+      </ScrollViewer>
+      <Expander Grid.Row="3" Header="Settings JSON" Margin="0,10,0,0">
+       <StackPanel>
+        <TextBox x:Name="SettingsJsonText" Height="118" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="10"/>
+        <Button Content="Copy JSON" HorizontalAlignment="Right" Margin="0,8,0,0" Click="CopySettings_Click"/>
+       </StackPanel>
+      </Expander>
+     </Grid>
+     <StackPanel x:Name="RecipeInspector" Grid.Row="1" Visibility="Collapsed">
+      <TextBlock x:Name="RecipeInspectorTitle" Text="" FontSize="16" FontWeight="Bold" Foreground="#252B39" TextWrapping="Wrap"/>
+      <TextBlock x:Name="RecipeInspectorDescription" Text="" Foreground="#8992A3" TextWrapping="Wrap" Margin="0,8,0,12"/>
+      <TextBlock x:Name="RecipeInspectorFormat" Text="" Foreground="#667085" FontSize="11"/>
+      <TextBlock Text="Recipe structure editing is scheduled for v0.4.0. This version only discovers and inspects recipe descriptors." Foreground="#8992A3" TextWrapping="Wrap" Margin="0,16,0,0" FontSize="11"/>
+     </StackPanel>
+    </Grid>
    </Border>
   </Grid>
   <Border Grid.Row="2" Background="#FFFFFF" BorderBrush="#E8EAF0" BorderThickness="0,1,0,0">
-   <Grid Margin="14,0"><TextBlock x:Name="StatusText" Text="Ready · No WordPress connection configured" Foreground="#8992A3" FontSize="10" VerticalAlignment="Center"/><TextBlock Text=".NET 8 · WebView2" Foreground="#8992A3" FontSize="10" HorizontalAlignment="Right" VerticalAlignment="Center"/></Grid>
+   <Grid Margin="14,0">
+    <TextBlock x:Name="StatusText" Text="Ready · No provider manifest loaded" Foreground="#8992A3" FontSize="10" VerticalAlignment="Center"/>
+    <TextBlock Text=".NET 8 · WebView2" Foreground="#8992A3" FontSize="10" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+   </Grid>
   </Border>
  </Grid>
 </Window>
