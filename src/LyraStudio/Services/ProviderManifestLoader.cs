@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using LyraStudio.Models;
 
 namespace LyraStudio.Services;
@@ -62,6 +63,7 @@ public sealed class ProviderManifestLoader
             if (string.IsNullOrWhiteSpace(widget.Id) || string.IsNullOrWhiteSpace(widget.Name))
                 throw new InvalidDataException("Every widget must have a non-empty Id and Name.");
             ValidateControls(widget.Controls);
+            ValidatePreview(widget.Preview);
         }
 
         foreach (var recipe in manifest.Recipes)
@@ -71,6 +73,24 @@ public sealed class ProviderManifestLoader
                 string.IsNullOrWhiteSpace(recipe.Format))
                 throw new InvalidDataException("Every recipe must have an Id, Name, and Format.");
         }
+    }
+
+    private static void ValidatePreview(WidgetPreviewDefinition? preview)
+    {
+        if (preview is null) return;
+        if (preview.Html.Length > 262144 || preview.Css.Length > 131072)
+            throw new InvalidDataException("A local widget preview template exceeds the supported size limit.");
+
+        // Local previews are static and offline: no executable or remote markup.
+        if (Regex.IsMatch(preview.Html,
+            @"<\s*(script|iframe|object|embed|form)\b|\son[a-z]+\s*=|javascript\s*:|https?://|<\s*link\b",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+            throw new InvalidDataException("Local preview HTML contains a forbidden script, frame, event handler, link, or remote URL.");
+
+        if (Regex.IsMatch(preview.Css,
+            @"@import\b|url\s*\(\s*['""]?https?://|</style",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+            throw new InvalidDataException("Local preview CSS contains a forbidden import, remote URL, or style terminator.");
     }
 
     private static void ValidateControls(IReadOnlyList<ControlDefinition>? controls)

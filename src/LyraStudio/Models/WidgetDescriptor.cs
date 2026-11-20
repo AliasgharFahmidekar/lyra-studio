@@ -6,7 +6,18 @@ public sealed record WidgetDescriptor(
     string? Category = null,
     string? Description = null,
     string? Version = null,
-    IReadOnlyList<ControlDefinition>? Controls = null);
+    IReadOnlyList<ControlDefinition>? Controls = null,
+    WidgetPreviewDefinition? Preview = null);
+
+/// <summary>
+/// Static, local HTML/CSS template supplied by a provider. Scripts and remote
+/// resources are deliberately not supported by the manifest preview contract.
+/// </summary>
+public sealed record WidgetPreviewDefinition
+{
+    public string Html { get; init; } = "";
+    public string Css { get; init; } = "";
+}
 
 public sealed record ControlDefinition
 {
