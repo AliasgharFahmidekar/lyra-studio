@@ -159,7 +159,7 @@ public sealed class DynamicInspectorBuilder
                         Minimum = min,
                         Maximum = max,
                         Value = Math.Clamp(ToDouble(current, min), min, max),
-                        TickFrequency = ReadConstraint(definition, "step", 1),
+                        TickFrequency = Math.Max(0.01, ReadConstraint(definition, "step", 1)),
                         IsSnapToTickEnabled = true,
                         AutoToolTipPlacement = System.Windows.Controls.Primitives.AutoToolTipPlacement.TopLeft
                     };
@@ -189,6 +189,11 @@ public sealed class DynamicInspectorBuilder
                         {
                             complexEditor.Background = Brushes.White;
                             Save(parsed);
+                        }
+                        else if (kind == "unknown")
+                        {
+                            complexEditor.Background = Brushes.MistyRose;
+                            Save(complexEditor.Text);
                         }
                         else
                         {
