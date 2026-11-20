@@ -7,24 +7,22 @@ using LyraStudio.Models;
 
 namespace LyraStudio.Services;
 
-/// <summary>
-/// Builds inspector controls entirely from provider-supplied metadata.
-/// Unknown kinds remain editable as raw text/JSON instead of being discarded.
-/// </summary>
+/// <summary>Builds inspector controls from provider-supplied metadata.</summary>
 public sealed class DynamicInspectorBuilder
 {
-    public void Build(
-        Panel target,
-        IReadOnlyList<ControlDefinition>? definitions,
-        IDictionary<string, object?> values,
-        Action onChanged)
+    public void Build(Panel target, IReadOnlyList<ControlDefinition>? definitions,
+        IDictionary<string, object?> values, Action onChanged)
+        => BuildPanel(target, definitions, values, null, onChanged);
+
+    private static void BuildPanel(Panel target, IReadOnlyList<ControlDefinition>? definitions,
+        IDictionary<string, object?> values, string? pathPrefix, Action onChanged)
     {
         target.Children.Clear();
         if (definitions is null || definitions.Count == 0)
         {
             target.Children.Add(new TextBlock
             {
-                Text = "This widget has not exposed configurable controls.",
+                Text = "No configurable fields were provided for this section.",
                 Foreground = Brushes.Gray,
                 TextWrapping = TextWrapping.Wrap,
                 Margin = new Thickness(0, 8, 0, 8)
@@ -36,49 +34,35 @@ public sealed class DynamicInspectorBuilder
         Action refreshConditions = () =>
         {
             foreach (var item in conditionalElements)
-                item.Element.Visibility = ConditionsMatch(item.Definition.Conditions, values)
+                item.Element.Visibility = ConditionEvaluator.Matches(
+                    item.Definition.Conditions, values, pathPrefix)
                     ? Visibility.Visible : Visibility.Collapsed;
         };
 
         foreach (var definition in definitions)
-            target.Children.Add(BuildControl(definition, null, values, conditionalElements, refreshConditions, onChanged));
+            target.Children.Add(BuildControl(definition, pathPrefix, values,
+                conditionalElements, refreshConditions, onChanged));
 
         refreshConditions();
     }
 
-    private static FrameworkElement BuildControl(
-        ControlDefinition definition,
-        string? parentPath,
+    private static FrameworkElement BuildControl(ControlDefinition definition, string? parentPath,
         IDictionary<string, object?> values,
         ICollection<(FrameworkElement Element, ControlDefinition Definition)> conditionalElements,
-        Action refreshConditions,
-        Action onChanged)
+        Action refreshConditions, Action onChanged)
     {
-        var key = string.IsNullOrWhiteSpace(parentPath)
-            ? definition.Name
-            : $"{parentPath}.{definition.Name}";
+        var key = string.IsNullOrWhiteSpace(parentPath) ? definition.Name : $"{parentPath}.{definition.Name}";
+        if (!values.ContainsKey(key)) values[key] = definition.DefaultValue;
 
-        if (!values.ContainsKey(key))
-            values[key] = definition.DefaultValue;
-
-        var wrapper = new Border
-        {
-            Margin = new Thickness(0, 0, 0, 12),
-            Padding = new Thickness(0, 0, 0, 2)
-        };
+        var wrapper = new Border { Margin = new Thickness(0, 0, 0, 12), Padding = new Thickness(0, 0, 0, 2) };
         var body = new StackPanel();
         wrapper.Child = body;
-
         var kind = NormalizeKind(definition.Kind);
+
         if (kind == "group")
         {
             var nested = new StackPanel { Margin = new Thickness(10, 8, 0, 0) };
-            if (definition.Children is not null)
-            {
-                foreach (var child in definition.Children)
-                    nested.Children.Add(BuildControl(child, key, values, conditionalElements, refreshConditions, onChanged));
-            }
-
+            BuildPanel(nested, definition.Children, values, key, onChanged);
             body.Children.Add(new Expander
             {
                 Header = definition.Label,
@@ -86,6 +70,10 @@ public sealed class DynamicInspectorBuilder
                 IsExpanded = true,
                 FontWeight = FontWeights.SemiBold
             });
+        }
+        else if (kind == "repeater")
+        {
+            body.Children.Add(BuildRepeater(definition, key, values, refreshConditions, onChanged));
         }
         else
         {
@@ -97,9 +85,7 @@ public sealed class DynamicInspectorBuilder
                 FontSize = 12,
                 Margin = new Thickness(0, 0, 0, 5)
             });
-
             if (!string.IsNullOrWhiteSpace(definition.Description))
-            {
                 body.Children.Add(new TextBlock
                 {
                     Text = definition.Description,
@@ -108,7 +94,6 @@ public sealed class DynamicInspectorBuilder
                     TextWrapping = TextWrapping.Wrap,
                     Margin = new Thickness(0, 0, 0, 5)
                 });
-            }
 
             var current = values[key];
             void Save(object? value)
@@ -173,16 +158,13 @@ public sealed class DynamicInspectorBuilder
                     editor = picker;
                     break;
 
-                case "repeater":
                 case "typography":
                 case "dimensions":
                 case "unknown":
                     var complexEditor = CreateTextEditor(current, multiline: true);
-                    complexEditor.ToolTip = kind == "repeater"
-                        ? "Edit repeater items as a JSON array in this version."
-                        : kind == "unknown"
-                            ? $"Unrecognized control kind '{definition.Kind}'. Value is preserved as text/JSON."
-                            : "Edit the structured value as JSON.";
+                    complexEditor.ToolTip = kind == "unknown"
+                        ? $"Unrecognized control kind '{definition.Kind}'. Value is preserved as text/JSON."
+                        : "Edit the structured value as JSON.";
                     complexEditor.LostFocus += (_, _) =>
                     {
                         if (TryParseJson(complexEditor.Text, out var parsed))
@@ -195,10 +177,7 @@ public sealed class DynamicInspectorBuilder
                             complexEditor.Background = Brushes.MistyRose;
                             Save(complexEditor.Text);
                         }
-                        else
-                        {
-                            complexEditor.Background = Brushes.MistyRose;
-                        }
+                        else complexEditor.Background = Brushes.MistyRose;
                     };
                     editor = complexEditor;
                     break;
@@ -221,10 +200,7 @@ public sealed class DynamicInspectorBuilder
                                     ? Brushes.White : Brushes.MistyRose;
                             }
                         }
-                        else
-                        {
-                            Save(textEditor.Text);
-                        }
+                        else Save(textEditor.Text);
                     };
                     editor = textEditor;
                     break;
@@ -240,11 +216,207 @@ public sealed class DynamicInspectorBuilder
         return wrapper;
     }
 
+    private static FrameworkElement BuildRepeater(ControlDefinition definition, string key,
+        IDictionary<string, object?> values, Action refreshConditions, Action onChanged)
+    {
+        var minimum = Math.Max(0, RepeaterValueHelper.ReadLimit(definition, "min_items", 0));
+        var configuredMaximum = RepeaterValueHelper.ReadLimit(definition, "max_items", 100);
+        var maximum = configuredMaximum <= 0 ? int.MaxValue : Math.Max(minimum, configuredMaximum);
+        var items = RepeaterValueHelper.ReadItems(values[key], definition.Children);
+        var root = new StackPanel();
+
+        root.Children.Add(new TextBlock
+        {
+            Text = definition.Label,
+            Foreground = new SolidColorBrush(Color.FromRgb(55, 63, 78)),
+            FontWeight = FontWeights.SemiBold,
+            FontSize = 12,
+            Margin = new Thickness(0, 0, 0, 5)
+        });
+        if (!string.IsNullOrWhiteSpace(definition.Description))
+            root.Children.Add(new TextBlock
+            {
+                Text = definition.Description,
+                Foreground = Brushes.Gray,
+                FontSize = 10,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 0, 0, 6)
+            });
+
+        var header = new DockPanel { Margin = new Thickness(0, 2, 0, 8) };
+        var countLabel = new TextBlock { Foreground = Brushes.Gray, VerticalAlignment = VerticalAlignment.Center, FontSize = 10 };
+        DockPanel.SetDock(countLabel, Dock.Left);
+        header.Children.Add(countLabel);
+
+        var addButton = CreateActionButton("+ Add item", "#7567E8");
+        DockPanel.SetDock(addButton, Dock.Right);
+        header.Children.Add(addButton);
+        root.Children.Add(header);
+
+        var itemList = new StackPanel();
+        root.Children.Add(itemList);
+
+        void CommitItems()
+        {
+            values[key] = items;
+            refreshConditions();
+            onChanged();
+        }
+
+        void RenderItems()
+        {
+            itemList.Children.Clear();
+            countLabel.Text = maximum == int.MaxValue
+                ? $"{items.Count} item(s) · min {minimum}, no maximum"
+                : $"{items.Count} item(s) · min {minimum}, max {maximum}";
+            addButton.IsEnabled = items.Count < maximum;
+
+            if (items.Count == 0)
+                itemList.Children.Add(new Border
+                {
+                    BorderBrush = new SolidColorBrush(Color.FromRgb(225, 229, 236)),
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(7),
+                    Padding = new Thickness(12),
+                    Child = new TextBlock
+                    {
+                        Text = "No items yet. Use Add item to create the first entry.",
+                        Foreground = Brushes.Gray,
+                        FontSize = 11,
+                        TextWrapping = TextWrapping.Wrap
+                    }
+                });
+
+            for (var index = 0; index < items.Count; index++)
+            {
+                var capturedIndex = index;
+                var card = new Border
+                {
+                    BorderBrush = new SolidColorBrush(Color.FromRgb(225, 229, 236)),
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(8),
+                    Padding = new Thickness(10),
+                    Margin = new Thickness(0, 0, 0, 8),
+                    Background = Brushes.White
+                };
+                var content = new StackPanel();
+                var itemHeader = new DockPanel { Margin = new Thickness(0, 0, 0, 9) };
+                var itemTitle = new TextBlock
+                {
+                    Text = $"Item {index + 1}",
+                    FontWeight = FontWeights.SemiBold,
+                    FontSize = 11,
+                    Foreground = new SolidColorBrush(Color.FromRgb(55, 63, 78)),
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                DockPanel.SetDock(itemTitle, Dock.Left);
+                itemHeader.Children.Add(itemTitle);
+
+                var actions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+                var upButton = CreateActionButton("↑", "#EEF0F5");
+                upButton.Foreground = new SolidColorBrush(Color.FromRgb(55, 63, 78));
+                upButton.Padding = new Thickness(8, 4, 8, 4);
+                upButton.Margin = new Thickness(3, 0, 0, 0);
+                upButton.IsEnabled = index > 0;
+                upButton.Click += (_, _) =>
+                {
+                    if (RepeaterValueHelper.TryMove(items, capturedIndex, capturedIndex - 1))
+                    {
+                        CommitItems();
+                        RenderItems();
+                    }
+                };
+
+                var downButton = CreateActionButton("↓", "#EEF0F5");
+                downButton.Foreground = new SolidColorBrush(Color.FromRgb(55, 63, 78));
+                downButton.Padding = new Thickness(8, 4, 8, 4);
+                downButton.Margin = new Thickness(3, 0, 0, 0);
+                downButton.IsEnabled = index < items.Count - 1;
+                downButton.Click += (_, _) =>
+                {
+                    if (RepeaterValueHelper.TryMove(items, capturedIndex, capturedIndex + 1))
+                    {
+                        CommitItems();
+                        RenderItems();
+                    }
+                };
+
+                var removeButton = CreateActionButton("Remove", "#FCEBEC");
+                removeButton.Foreground = new SolidColorBrush(Color.FromRgb(174, 54, 65));
+                removeButton.Padding = new Thickness(9, 4, 9, 4);
+                removeButton.Margin = new Thickness(3, 0, 0, 0);
+                removeButton.IsEnabled = items.Count > minimum;
+                removeButton.Click += (_, _) =>
+                {
+                    if (RepeaterValueHelper.TryRemove(items, capturedIndex, minimum))
+                    {
+                        CommitItems();
+                        RenderItems();
+                    }
+                };
+
+                actions.Children.Add(upButton);
+                actions.Children.Add(downButton);
+                actions.Children.Add(removeButton);
+                DockPanel.SetDock(actions, Dock.Right);
+                itemHeader.Children.Add(actions);
+                content.Children.Add(itemHeader);
+
+                var fields = new StackPanel();
+                if (definition.Children is { Count: > 0 })
+                    BuildPanel(fields, definition.Children, items[index], null, CommitItems);
+                else
+                    fields.Children.Add(new TextBlock
+                    {
+                        Text = "This repeater has no item schema. The item will be preserved as JSON.",
+                        Foreground = Brushes.Gray,
+                        FontSize = 10,
+                        TextWrapping = TextWrapping.Wrap
+                    });
+
+                content.Children.Add(fields);
+                card.Child = content;
+                itemList.Children.Add(card);
+            }
+        }
+
+        addButton.Click += (_, _) =>
+        {
+            if (RepeaterValueHelper.TryAdd(items, definition.Children, maximum))
+            {
+                CommitItems();
+                RenderItems();
+            }
+        };
+
+        while (items.Count < minimum)
+            RepeaterValueHelper.TryAdd(items, definition.Children, maximum);
+
+        values[key] = items;
+        RenderItems();
+        return root;
+    }
+
+    private static Button CreateActionButton(string text, string background) => new()
+    {
+        Content = text,
+        Background = (Brush)new BrushConverter().ConvertFromString(background)!,
+        Foreground = Brushes.White,
+        FontSize = 10,
+        FontWeight = FontWeights.SemiBold,
+        Padding = new Thickness(10, 5, 10, 5),
+        BorderThickness = new Thickness(0),
+        Cursor = System.Windows.Input.Cursors.Hand
+    };
+
     private static TextBox CreateTextEditor(object? value, bool multiline)
     {
+        var display = value is IDictionary<string, object?> dictionary
+            ? JsonSerializer.Serialize(dictionary, new JsonSerializerOptions { WriteIndented = true })
+            : ToDisplayString(value);
         return new TextBox
         {
-            Text = ToDisplayString(value),
+            Text = display,
             MinHeight = multiline ? 76 : 34,
             AcceptsReturn = multiline,
             TextWrapping = multiline ? TextWrapping.Wrap : TextWrapping.NoWrap,
@@ -266,35 +438,10 @@ public sealed class DynamicInspectorBuilder
         "slider" or "range" => "slider",
         "date" or "datetime" or "date_time" => "date",
         "group" or "section" or "tab" => "group",
-        "repeater" or "typography" or "dimensions" => (kind ?? string.Empty).Trim().ToLowerInvariant(),
+        "repeater" => "repeater",
+        "typography" or "dimensions" => (kind ?? string.Empty).Trim().ToLowerInvariant(),
         _ => "unknown"
     };
-
-    private static bool ConditionsMatch(
-        IReadOnlyList<ControlCondition>? conditions,
-        IDictionary<string, object?> values)
-    {
-        if (conditions is null || conditions.Count == 0) return true;
-
-        foreach (var condition in conditions)
-        {
-            if (!values.TryGetValue(condition.Field, out var actual)) return false;
-            var left = ToDisplayString(actual);
-            var right = ToDisplayString(condition.Value);
-            var matches = condition.Operator.Trim().ToLowerInvariant() switch
-            {
-                "==" or "=" or "equals" or "is" => string.Equals(left, right, StringComparison.OrdinalIgnoreCase),
-                "!=" or "not_equals" or "is_not" => !string.Equals(left, right, StringComparison.OrdinalIgnoreCase),
-                "contains" => left.Contains(right, StringComparison.OrdinalIgnoreCase),
-                "truthy" => ToBoolean(actual),
-                "falsy" => !ToBoolean(actual),
-                _ => false
-            };
-            if (!matches) return false;
-        }
-
-        return true;
-    }
 
     private static bool TryParseJson(string text, out object? value)
     {
@@ -321,24 +468,17 @@ public sealed class DynamicInspectorBuilder
         return Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty;
     }
 
-    private static bool ToBoolean(object? value)
-    {
-        if (value is bool boolean) return boolean;
-        return bool.TryParse(ToDisplayString(value), out var parsed) && parsed;
-    }
+    private static bool ToBoolean(object? value) =>
+        value is bool boolean ? boolean : bool.TryParse(ToDisplayString(value), out var parsed) && parsed;
 
     private static double ToDouble(object? value, double fallback) =>
         double.TryParse(ToDisplayString(value), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
             ? parsed : fallback;
 
     private static DateTime? ToDate(object? value) =>
-        DateTime.TryParse(ToDisplayString(value), CultureInfo.InvariantCulture, out var parsed)
-            ? parsed : null;
+        DateTime.TryParse(ToDisplayString(value), CultureInfo.InvariantCulture, out var parsed) ? parsed : null;
 
-    private static double ReadConstraint(ControlDefinition definition, string key, double fallback)
-    {
-        if (definition.Constraints is not null && definition.Constraints.TryGetValue(key, out var value))
-            return ToDouble(value, fallback);
-        return fallback;
-    }
+    private static double ReadConstraint(ControlDefinition definition, string key, double fallback) =>
+        definition.Constraints is not null && definition.Constraints.TryGetValue(key, out var value)
+            ? ToDouble(value, fallback) : fallback;
 }

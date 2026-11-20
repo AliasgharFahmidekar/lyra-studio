@@ -42,4 +42,4 @@ Manifest import is read-only. It does not execute manifest content or modify Wor
 5. **Safe editing:** importing manifests is read-only. Nothing is published or written back unless a future, separately designed operation is explicitly confirmed.
 6. **Future-proof controls:** inspector controls are represented as typed metadata, including nested groups, repeaters, responsive values, conditions, and defaults.
 
-See [docs/architecture.md](docs/architecture.md), [ROADMAP.md](ROADMAP.md), and [docs/provider-manifest-v1.md](docs/provider-manifest-v1.md).
+Run automated tests on Windows with `dotnet test tests/LyraStudio.Tests/LyraStudio.Tests.csproj --configuration Release`.\n\nSee [docs/architecture.md](docs/architecture.md), [ROADMAP.md](ROADMAP.md), and [docs/provider-manifest-v1.md](docs/provider-manifest-v1.md).

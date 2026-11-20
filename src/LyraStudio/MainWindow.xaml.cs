@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Text.Json;
 using System.Windows;
 using System.Windows.Media;
 using Microsoft.Win32;
@@ -244,10 +243,7 @@ public partial class MainWindow : Window
 
     private void UpdateSettingsJson()
     {
-        SettingsJsonText.Text = JsonSerializer.Serialize(_currentSettings, new JsonSerializerOptions
-        {
-            WriteIndented = true
-        });
+        SettingsJsonText.Text = SettingsJsonSerializer.Serialize(_currentSettings);
     }
 
     private void CopySettings_Click(object sender, RoutedEventArgs e)

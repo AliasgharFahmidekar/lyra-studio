@@ -21,7 +21,7 @@ Each control contains a stable `name`, display `label`, string `kind`, optional 
 
 Control kinds currently recognized by the desktop inspector include: `text`, `textarea`, `number`, `toggle`, `select`, `color`, `url`, `media`, `icon`, `group`, `repeater`, `typography`, `dimensions`, `slider`, and `date`. Unknown kinds are retained and displayed as raw text/JSON instead of being dropped.
 
-The early repeater editor accepts a JSON array. A full visual repeater editor is scheduled for v0.2.0 follow-up work.
+A repeater control uses its `children` array as its per-item field schema. Lyra Studio renders each item as a card and supports adding, removing, and reordering items. Each item's nested fields are generated from the same control schema. The `constraints.min_items` and `constraints.max_items` values enforce collection limits. If `max_items` is omitted, the desktop editor defaults to 100; a value of 0 means no configured maximum.
 
 ## Recipe descriptor
 

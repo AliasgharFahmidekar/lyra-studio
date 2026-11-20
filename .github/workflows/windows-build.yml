@@ -17,10 +17,12 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-      - name: Restore Windows runtime
-        run: dotnet restore src/LyraStudio/LyraStudio.csproj --runtime win-x64
-      - name: Build
+      - name: Restore app and tests
+        run: dotnet restore tests/LyraStudio.Tests/LyraStudio.Tests.csproj --runtime win-x64
+      - name: Build desktop app
         run: dotnet build src/LyraStudio/LyraStudio.csproj --configuration Release --runtime win-x64 --no-restore
+      - name: Run automated tests
+        run: dotnet test tests/LyraStudio.Tests/LyraStudio.Tests.csproj --configuration Release --runtime win-x64 --no-restore --logger "console;verbosity=normal"
       - name: Publish Windows app
         run: dotnet publish src/LyraStudio/LyraStudio.csproj --configuration Release --runtime win-x64 --no-restore --self-contained false -p:PublishSingleFile=true -o artifacts/win-x64
       - name: Upload artifact

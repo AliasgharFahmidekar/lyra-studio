@@ -1,6 +1,6 @@
 # Lyra Studio Roadmap
 
-This roadmap is the source of truth for release scope and progress. Update the checkboxes and percentages whenever implementation work is completed or reclassified.
+This roadmap is the source of truth for release scope and progress. Percentages are recalculated from completed, committed tasks and verified CI/runtime evidence.
 
 ## Product constraints
 
@@ -13,21 +13,21 @@ This roadmap is the source of truth for release scope and progress. Update the c
 
 ## Release roadmap
 
-### v0.1.0 — Desktop foundation · 75%
+### v0.1.0 — Desktop foundation · 100%
 
 - [x] WPF application shell and navigation
 - [x] WordPress URL profile persistence and read-only REST connectivity check
 - [x] Provider interfaces and base widget/recipe/preview models
-- [ ] Verified clean Windows CI build and publish artifact
+- [x] Verified clean Windows CI build, win-x64 publish, and artifact upload (run 44749365180)
 
-### v0.2.0 — Dynamic catalog and inspector · 67% · Current
+### v0.2.0 — Dynamic catalog and inspector · 83% · Current
 
 - [x] Versioned, provider-neutral JSON manifest contract
 - [x] Manifest import and validation with duplicate and version checks
 - [x] Dynamic inspector generated from control metadata
 - [x] Widget and recipe catalog views populated from the imported manifest
-- [ ] Rich repeater editor with add/remove/reorder and per-item nested fields
-- [ ] Automated tests for manifest compatibility, unknown controls, and conditional visibility
+- [x] Visual repeater editor with schema-generated nested fields, add/remove/reorder, and min/max enforcement
+- [ ] Automated tests passing in Windows CI for manifest validation, repeater operations, settings JSON serialization, and conditional visibility
 
 ### v0.3.0 — Real Elementor preview · 0%
 
@@ -63,9 +63,9 @@ This roadmap is the source of truth for release scope and progress. Update the c
 
 ## Progress calculation
 
-Release weights are fixed for the current roadmap: v0.1.0 = 10%, v0.2.0 = 20%, v0.3.0 = 25%, v0.4.0 = 20%, v0.5.0 = 15%, v1.0.0 = 10%. The project percentage is the sum of each release weight multiplied by that release's completion percentage. Unstarted releases count as 0%. A task is not marked complete until its implementation is committed; tasks requiring runtime/CI evidence remain open until that evidence exists.
+Release weights are fixed: v0.1.0 = 10%, v0.2.0 = 20%, v0.3.0 = 25%, v0.4.0 = 20%, v0.5.0 = 15%, v1.0.0 = 10%. The project percentage is the weighted sum of release completion percentages. Percentages are rounded to the nearest whole number for display.
 
-Current weighted project progress: **21%** (v0.1.0: 75% × 10%, v0.2.0: 67% × 20%, all later releases: 0%).
+Current weighted project progress: **27%** (v0.1.0: 100% × 10%, v0.2.0: 83% × 20%, later releases: 0%; unrounded total 26.6%).
 
 ## Progress update protocol
 
@@ -73,4 +73,5 @@ For every development update:
 1. Mark only completed, committed work as complete.
 2. Recalculate the current release percentage and weighted project percentage.
 3. Record the commit/PR and any unverified build or runtime limitations.
-4. Keep this roadmap synchronized with the release notes and the user-facing progress report.
+4. Keep this roadmap synchronized with release notes and user-facing progress reports.
+5. Never count CI work as complete before its full relevant job succeeds.
