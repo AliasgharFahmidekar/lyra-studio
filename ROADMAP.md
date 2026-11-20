@@ -20,22 +20,23 @@ This roadmap is the source of truth for release scope and progress. Percentages 
 - [x] Provider interfaces and base widget/recipe/preview models
 - [x] Verified clean Windows CI build, win-x64 publish, and artifact upload (run 44749365180)
 
-### v0.2.0 — Dynamic catalog and inspector · 83% · Current
+### v0.2.0 — Dynamic catalog and inspector · 100%
 
 - [x] Versioned, provider-neutral JSON manifest contract
 - [x] Manifest import and validation with duplicate and version checks
 - [x] Dynamic inspector generated from control metadata
 - [x] Widget and recipe catalog views populated from the imported manifest
 - [x] Visual repeater editor with schema-generated nested fields, add/remove/reorder, and min/max enforcement
-- [ ] Automated tests passing in Windows CI for manifest validation, repeater operations, settings JSON serialization, and conditional visibility
+- [x] Automated tests passing in Windows CI for manifest validation, repeater operations, settings JSON serialization, and conditional visibility (14/14 passed, run 44751045277)
 
-### v0.3.0 — Real Elementor preview · 0%
+### v0.3.0 — Real Elementor preview · 0% · Current
 
-- [ ] Verify available preview/render capabilities without changing Lyra Core
-- [ ] Implement a preview-provider adapter for a compatible existing endpoint or supported local bridge
-- [ ] Create isolated temporary preview sessions
-- [ ] Embed real WordPress + Elementor output in WebView2
-- [ ] Desktop/tablet/mobile viewport controls and preview cleanup
+- [ ] Verify existing Lyra Core / Elementor preview capabilities without changing the plugin
+- [ ] Decide a safe preview transport that does not publish or overwrite real pages
+- [ ] Implement a preview-provider adapter for the selected transport
+- [ ] Create isolated temporary preview sessions and cleanup
+- [ ] Embed actual WordPress + Elementor output in WebView2
+- [ ] Desktop/tablet/mobile viewport controls
 
 ### v0.4.0 — Recipe Studio · 0%
 
@@ -65,7 +66,7 @@ This roadmap is the source of truth for release scope and progress. Percentages 
 
 Release weights are fixed: v0.1.0 = 10%, v0.2.0 = 20%, v0.3.0 = 25%, v0.4.0 = 20%, v0.5.0 = 15%, v1.0.0 = 10%. The project percentage is the weighted sum of release completion percentages. Percentages are rounded to the nearest whole number for display.
 
-Current weighted project progress: **27%** (v0.1.0: 100% × 10%, v0.2.0: 83% × 20%, later releases: 0%; unrounded total 26.6%).
+Current weighted project progress: **30%** (v0.1.0: 100% × 10%, v0.2.0: 100% × 20%, later releases: 0%).
 
 ## Progress update protocol
 
