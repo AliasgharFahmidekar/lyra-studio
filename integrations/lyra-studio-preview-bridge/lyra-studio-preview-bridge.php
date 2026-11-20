@@ -96,8 +96,8 @@ final class Lyra_Studio_Preview_Bridge {
 		$elementor_ready = self::elementor_is_ready();
 		$widget_names    = array();
 
-		if ( $elementor_ready && isset( \\Elementor\\Plugin::$instance->widgets_manager ) ) {
-			$widgets = \\Elementor\\Plugin::$instance->widgets_manager->get_widget_types();
+		if ( $elementor_ready && isset( \Elementor\Plugin::$instance->widgets_manager ) ) {
+			$widgets = \Elementor\Plugin::$instance->widgets_manager->get_widget_types();
 			foreach ( $widgets as $widget ) {
 				if ( is_object( $widget ) && method_exists( $widget, 'get_name' ) ) {
 					$widget_names[] = sanitize_key( $widget->get_name() );
@@ -172,7 +172,7 @@ final class Lyra_Studio_Preview_Bridge {
 		);
 
 		try {
-			$document = \\Elementor\\Plugin::$instance->documents->create( 'post', $post_data, $meta_data );
+			$document = \Elementor\Plugin::$instance->documents->create( 'post', $post_data, $meta_data );
 
 			if ( is_wp_error( $document ) || ! is_object( $document ) || ! method_exists( $document, 'save' ) ) {
 				return new WP_Error(
@@ -261,7 +261,7 @@ final class Lyra_Studio_Preview_Bridge {
 		}
 
 		try {
-			$document = \\Elementor\\Plugin::$instance->documents->get( $post->ID );
+			$document = \Elementor\Plugin::$instance->documents->get( $post->ID );
 			if ( ! $document || ! $document->is_editable_by_current_user() ) {
 				return new WP_Error(
 					'lyra_studio_document_not_editable',
