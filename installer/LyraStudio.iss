@@ -54,15 +54,13 @@ begin
 end;
 
 function IsWebView2Installed: Boolean;
-const
-  RuntimeClientKey = 'SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}';
 begin
   { On 64-bit Windows the machine-wide client registration is under
     WOW6432Node; HKLM32 maps this path to that registry view. }
   Result :=
-    RuntimeInstalledAt(HKLM32, RuntimeClientKey) or
-    RuntimeInstalledAt(HKCU64, RuntimeClientKey) or
-    RuntimeInstalledAt(HKCU32, RuntimeClientKey);
+    RuntimeInstalledAt(HKLM32, 'SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}') or
+    RuntimeInstalledAt(HKCU64, 'SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}') or
+    RuntimeInstalledAt(HKCU32, 'SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}');
 end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;
