@@ -8,6 +8,19 @@ on:
   workflow_dispatch:
 
 jobs:
+  php-bridge-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          tools: none
+      - name: Lint optional WordPress bridge
+        run: php -l integrations/lyra-studio-preview-bridge/lyra-studio-preview-bridge.php
+
   build:
     runs-on: windows-latest
     steps:
@@ -25,8 +38,17 @@ jobs:
         run: dotnet test tests/LyraStudio.Tests/LyraStudio.Tests.csproj --configuration Release --runtime win-x64 --no-restore --logger "console;verbosity=normal"
       - name: Publish Windows app
         run: dotnet publish src/LyraStudio/LyraStudio.csproj --configuration Release --runtime win-x64 --no-restore --self-contained false -p:PublishSingleFile=true -o artifacts/win-x64
-      - name: Upload artifact
+      - name: Package optional WordPress bridge
+        shell: pwsh
+        run: |
+          Compress-Archive -Path integrations/lyra-studio-preview-bridge -DestinationPath artifacts/lyra-studio-preview-bridge.zip -Force
+      - name: Upload Windows app
         uses: actions/upload-artifact@v4
         with:
           name: LyraStudio-win-x64
           path: artifacts/win-x64/
+      - name: Upload optional WordPress bridge
+        uses: actions/upload-artifact@v4
+        with:
+          name: LyraStudio-preview-bridge
+          path: artifacts/lyra-studio-preview-bridge.zip

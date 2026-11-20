@@ -1,6 +1,6 @@
 # Lyra Studio Roadmap
 
-This roadmap is the source of truth for release scope and progress. Percentages are recalculated from completed, committed tasks and verified CI/runtime evidence.
+This roadmap is the source of truth for release scope and progress. Percentages are recalculated from completed, committed work and verified CI/runtime evidence.
 
 ## Product constraints
 
@@ -29,15 +29,15 @@ This roadmap is the source of truth for release scope and progress. Percentages 
 - [x] Visual repeater editor with schema-generated nested fields, add/remove/reorder, and min/max enforcement
 - [x] Automated tests passing in Windows CI for manifest validation, repeater operations, settings JSON serialization, and conditional visibility (14/14 passed, run 44751045277)
 
-### v0.3.0 — Real Elementor preview · 29% · Current
+### v0.3.0 — Real Elementor preview · 57% · Current
 
-- [x] Verify the supplied Lyra Core 0.1.1 and Elementor preview/render capabilities without changing the Core plugin
-- [x] Implement read-only WordPress REST discovery diagnostics: Link-header discovery, subdirectory-aware fallback, namespace and route parsing, and capability report (10 new tests; full suite 24/24 passed, run 44752714846)
-- [ ] Decide and document the selected safe preview transport without publishing or overwriting real pages
-- [ ] Implement a preview-provider adapter for the selected transport
-- [ ] Create isolated temporary draft preview sessions with exact-session cleanup
-- [ ] Embed actual WordPress + Elementor output in WebView2
-- [ ] Add desktop/tablet/mobile viewport controls
+- [x] Verify supplied Lyra Core 0.1.1 and Elementor preview/render capabilities without changing Core
+- [x] Read-only WordPress REST discovery diagnostics (24/24 tests passed, run 44752714846)
+- [x] Select and document the optional, separate WordPress Preview Bridge transport
+- [x] Implement authenticated temporary-draft Bridge endpoints with owner/session-bound updates, deletion, TTL and exact-draft cleanup (PHP syntax CI validation required)
+- [ ] Implement the WPF provider client and encrypted WordPress Application Password storage
+- [ ] Add preview create/update/close workflow and navigate WebView2 to actual Elementor output
+- [ ] Run end-to-end validation against a real WordPress + Elementor site and add desktop/tablet/mobile preview controls
 
 ### v0.4.0 — Recipe Studio · 0%
 
@@ -67,13 +67,13 @@ This roadmap is the source of truth for release scope and progress. Percentages 
 
 Release weights are fixed: v0.1.0 = 10%, v0.2.0 = 20%, v0.3.0 = 25%, v0.4.0 = 20%, v0.5.0 = 15%, v1.0.0 = 10%. The project percentage is the weighted sum of release completion percentages. Percentages are rounded to the nearest whole number for display.
 
-Current weighted project progress: **37%** (v0.1.0: 100% × 10%, v0.2.0: 100% × 20%, v0.3.0: 2/7 = 28.6% × 25%, later releases: 0%; unrounded total 37.14%).
+Current weighted project progress: **44%** (v0.1.0: 100% × 10%, v0.2.0: 100% × 20%, v0.3.0: 4/7 = 57.1% × 25%, later releases: 0%; unrounded total 44.29%).
 
 ## Progress update protocol
 
 For every development update:
 1. Mark only completed, committed work as complete.
-2. Recalculate the current release percentage and weighted project percentage.
+2. Recalculate current release and weighted project percentages.
 3. Record the commit/PR and any unverified build or runtime limitations.
 4. Keep this roadmap synchronized with release notes and user-facing progress reports.
 5. Never count CI work as complete before its full relevant job succeeds.
