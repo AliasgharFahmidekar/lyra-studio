@@ -31,8 +31,9 @@ dotnet run --project src/LyraStudio
 4. Select a widget to generate its settings inspector from the manifest schema.
 5. Edit repeater items with add, remove, and reorder controls.
 6. Adjust values and copy the resulting nested settings JSON.
+7. Use **Connect WordPress** to inspect the site's public REST API namespaces and declared routes.
 
-Manifest import is read-only. It does not execute manifest content or modify WordPress. The inspector supports common scalar controls, nested groups, conditional visibility, and schema-generated repeater item fields with collection limits. Real Elementor preview is scheduled for a later release.
+Manifest import and WordPress capability discovery are read-only. They do not execute manifest content or modify WordPress. The inspector supports common scalar controls, nested groups, conditional visibility, and schema-generated repeater item fields with collection limits. The connection report does not infer permissions or claim that an Elementor preview endpoint exists. Real Elementor preview is scheduled for a later release.
 
 ## Tests
 
@@ -48,7 +49,7 @@ dotnet test tests/LyraStudio.Tests/LyraStudio.Tests.csproj --configuration Relea
 2. **No plugin changes in this phase:** Lyra Studio work does not alter the Lyra Core development path.
 3. **No hardcoded widget catalog:** widgets, controls, recipes, templates, and their versions come from provider data.
 4. **Real previews only:** the preview surface must display HTML rendered by the actual WordPress + Elementor runtime. A local imitation is never presented as a real preview.
-5. **Safe editing:** importing manifests is read-only. Nothing is published or written back unless a future, separately designed operation is explicitly confirmed.
+5. **Safe editing:** importing manifests and reading REST discovery information are read-only. Nothing is published or written back unless a future, separately designed operation is explicitly confirmed.
 6. **Future-proof controls:** inspector controls are represented as typed metadata, including nested groups, repeaters, responsive values, conditions, and defaults.
 
-See [docs/architecture.md](docs/architecture.md), [ROADMAP.md](ROADMAP.md), and [docs/provider-manifest-v1.md](docs/provider-manifest-v1.md).
+See [docs/architecture.md](docs/architecture.md), [docs/preview-integration-research.md](docs/preview-integration-research.md), [ROADMAP.md](ROADMAP.md), and [docs/provider-manifest-v1.md](docs/provider-manifest-v1.md).
