@@ -3,7 +3,7 @@
 ; WebView2 Evergreen Standalone is installed silently only when missing.
 
 #define MyAppName "Lyra Studio"
-#define MyAppVersion "0.4.0"
+#define MyAppVersion "0.3.0"
 #define MyAppPublisher "Lyra"
 #define MyAppExeName "LyraStudio.exe"
 
