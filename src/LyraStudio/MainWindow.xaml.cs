@@ -55,13 +55,13 @@ public partial class MainWindow : Window
         StatusText.Text = "Checking WordPress REST API…";
         try
         {
-            await _connectionProbe.CheckAsync(_profile.SiteUrl);
+            var capabilities = await _connectionProbe.CheckAsync(_profile.SiteUrl);
             ConnectionDot.Fill = new SolidColorBrush(Color.FromRgb(37, 170, 112));
-            ConnectionLabel.Text = "WordPress reachable";
-            StatusText.Text = $"WordPress REST API reachable · {_profile.SiteUrl}";
-            PageSubtitle.Text = "Connectivity verified. Widget discovery requires a compatible provider manifest or adapter.";
-            EmptyTitle.Text = "WordPress connection verified";
-            EmptyDescription.Text = "The site responds to the WordPress REST API. This confirms connectivity only; it does not imply that the site exposes a Lyra Studio widget catalog or live preview capability.";
+            ConnectionLabel.Text = "REST index inspected";
+            StatusText.Text = $"Read-only WordPress discovery · {capabilities.DiscoveredRouteCount} routes";
+            PageSubtitle.Text = $"REST discovery completed · {capabilities.Namespaces.Count} namespaces";
+            EmptyTitle.Text = "WordPress capabilities inspected";
+            EmptyDescription.Text = capabilities.ToDisplayText();
         }
         catch (Exception ex)
         {
