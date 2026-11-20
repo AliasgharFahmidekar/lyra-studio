@@ -20,22 +20,24 @@ This roadmap is the source of truth for release scope and progress. Percentages 
 - [x] Provider interfaces and base widget/recipe/preview models
 - [x] Verified clean Windows CI build, win-x64 publish, and artifact upload (run 44749365180)
 
-### v0.2.0 — Dynamic catalog and inspector · 83% · Current
+### v0.2.0 — Dynamic catalog and inspector · 100%
 
 - [x] Versioned, provider-neutral JSON manifest contract
 - [x] Manifest import and validation with duplicate and version checks
 - [x] Dynamic inspector generated from control metadata
 - [x] Widget and recipe catalog views populated from the imported manifest
 - [x] Visual repeater editor with schema-generated nested fields, add/remove/reorder, and min/max enforcement
-- [ ] Automated tests passing in Windows CI for manifest validation, repeater operations, settings JSON serialization, and conditional visibility
+- [x] Automated tests passing in Windows CI for manifest validation, repeater operations, settings JSON serialization, and conditional visibility (14/14 passed, run 44751045277)
 
-### v0.3.0 — Real Elementor preview · 0%
+### v0.3.0 — Real Elementor preview · 29% · Current
 
-- [ ] Verify available preview/render capabilities without changing Lyra Core
-- [ ] Implement a preview-provider adapter for a compatible existing endpoint or supported local bridge
-- [ ] Create isolated temporary preview sessions
-- [ ] Embed real WordPress + Elementor output in WebView2
-- [ ] Desktop/tablet/mobile viewport controls and preview cleanup
+- [x] Verify the supplied Lyra Core 0.1.1 and Elementor preview/render capabilities without changing the Core plugin
+- [x] Implement read-only WordPress REST discovery diagnostics: Link-header discovery, subdirectory-aware fallback, namespace and route parsing, and capability report (10 new tests; full suite 24/24 passed, run 44752714846)
+- [ ] Decide and document the selected safe preview transport without publishing or overwriting real pages
+- [ ] Implement a preview-provider adapter for the selected transport
+- [ ] Create isolated temporary draft preview sessions with exact-session cleanup
+- [ ] Embed actual WordPress + Elementor output in WebView2
+- [ ] Add desktop/tablet/mobile viewport controls
 
 ### v0.4.0 — Recipe Studio · 0%
 
@@ -65,7 +67,7 @@ This roadmap is the source of truth for release scope and progress. Percentages 
 
 Release weights are fixed: v0.1.0 = 10%, v0.2.0 = 20%, v0.3.0 = 25%, v0.4.0 = 20%, v0.5.0 = 15%, v1.0.0 = 10%. The project percentage is the weighted sum of release completion percentages. Percentages are rounded to the nearest whole number for display.
 
-Current weighted project progress: **27%** (v0.1.0: 100% × 10%, v0.2.0: 83% × 20%, later releases: 0%; unrounded total 26.6%).
+Current weighted project progress: **37%** (v0.1.0: 100% × 10%, v0.2.0: 100% × 20%, v0.3.0: 2/7 = 28.6% × 25%, later releases: 0%; unrounded total 37.14%).
 
 ## Progress update protocol
 
