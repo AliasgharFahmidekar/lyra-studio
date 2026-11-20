@@ -13,7 +13,7 @@
      <Border Width="34" Height="34" CornerRadius="10" Background="#7567E8" Margin="0,0,11,0">
       <TextBlock Text="L" Foreground="White" FontSize="21" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
      </Border>
-     <StackPanel VerticalAlignment="Center"><TextBlock Text="Lyra Studio" FontSize="16" FontWeight="Bold" Foreground="#202432"/><TextBlock Text="WIDGET WORKSPACE" FontSize="9" Foreground="#8992A3" CharacterSpacing="120"/></StackPanel>
+     <StackPanel VerticalAlignment="Center"><TextBlock Text="Lyra Studio" FontSize="16" FontWeight="Bold" Foreground="#202432"/><TextBlock Text="WIDGET WORKSPACE" FontSize="9" Foreground="#8992A3"/></StackPanel>
     </StackPanel>
     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
      <Ellipse x:Name="ConnectionDot" Width="8" Height="8" Fill="#D59B38" Margin="0,0,8,0"/>
