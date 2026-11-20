@@ -43,38 +43,26 @@ Name: "{autodesktop}\Lyra Studio"; Filename: "{app}\{#MyAppExeName}"; Tasks: des
 Filename: "{app}\{#MyAppExeName}"; Description: "Launch Lyra Studio"; Flags: postinstall nowait skipifsilent
 
 [Code]
-function WebView2InstalledInRoot(RootKey: Integer): Boolean;
+function RuntimeInstalledAt(RootKey: Integer; KeyPath: string): Boolean;
 var
-  SubKeys: TArrayOfString;
-  I: Integer;
-  KeyName: string;
-  DisplayName: string;
   ProductVersion: string;
 begin
-  Result := False;
-  if not RegGetSubkeyNames(RootKey, 'SOFTWARE\Microsoft\EdgeUpdate\Clients', SubKeys) then
-    Exit;
-  for I := 0 to GetArrayLength(SubKeys) - 1 do
-  begin
-    KeyName := 'SOFTWARE\Microsoft\EdgeUpdate\Clients\' + SubKeys[I];
-    if RegQueryStringValue(RootKey, KeyName, 'name', DisplayName) and
-       (CompareText(DisplayName, 'Microsoft Edge WebView2 Runtime') = 0) and
-       RegQueryStringValue(RootKey, KeyName, 'pv', ProductVersion) and
-       (ProductVersion <> '') and (ProductVersion <> '0.0.0.0') then
-    begin
-      Result := True;
-      Exit;
-    end;
-  end;
+  Result :=
+    RegQueryStringValue(RootKey, KeyPath, 'pv', ProductVersion) and
+    (ProductVersion <> '') and
+    (ProductVersion <> '0.0.0.0');
 end;
 
 function IsWebView2Installed: Boolean;
+const
+  RuntimeClientKey = 'SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}';
 begin
+  { On 64-bit Windows the machine-wide client registration is under
+    WOW6432Node; HKLM32 maps this path to that registry view. }
   Result :=
-    WebView2InstalledInRoot(HKLM64) or
-    WebView2InstalledInRoot(HKCU64) or
-    WebView2InstalledInRoot(HKLM32) or
-    WebView2InstalledInRoot(HKCU32);
+    RuntimeInstalledAt(HKLM32, RuntimeClientKey) or
+    RuntimeInstalledAt(HKCU64, RuntimeClientKey) or
+    RuntimeInstalledAt(HKCU32, RuntimeClientKey);
 end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;

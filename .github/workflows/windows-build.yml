@@ -29,9 +29,14 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force artifacts/prerequisites | Out-Null
-          Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile "artifacts/prerequisites/MicrosoftEdgeWebView2RuntimeInstallerX64.exe"
-          if ((Get-Item "artifacts/prerequisites/MicrosoftEdgeWebView2RuntimeInstallerX64.exe").Length -lt 50000000) {
+          Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2124701" -OutFile "artifacts/prerequisites/MicrosoftEdgeWebView2RuntimeInstallerX64.exe"
+          $installer = "artifacts/prerequisites/MicrosoftEdgeWebView2RuntimeInstallerX64.exe"
+          if ((Get-Item $installer).Length -lt 50000000) {
             throw "The offline WebView2 installer download appears incomplete."
+          }
+          $signature = Get-AuthenticodeSignature $installer
+          if ($signature.Status -ne "Valid" -or $signature.SignerCertificate.Subject -notlike "*Microsoft Corporation*") {
+            throw "The downloaded WebView2 standalone installer does not have a valid Microsoft signature."
           }
       - name: Install Inno Setup
         run: choco install innosetup --yes --no-progress
