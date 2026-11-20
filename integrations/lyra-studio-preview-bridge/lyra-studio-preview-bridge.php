@@ -319,7 +319,7 @@ final class Lyra_Studio_Preview_Bridge {
 			return $post;
 		}
 
-		$access = self::validate_owned_draft( $post, $session_id );
+		$access = self::validate_owned_draft( $post, $session_id, true );
 		if ( is_wp_error( $access ) ) {
 			return $access;
 		}
@@ -446,7 +446,7 @@ final class Lyra_Studio_Preview_Bridge {
 		);
 	}
 
-	private static function validate_owned_draft( $post, $session_id ) {
+	private static function validate_owned_draft( $post, $session_id, $allow_expired = false ) {
 		if ( ! $post || 'page' !== $post->post_type ) {
 			return new WP_Error(
 				'lyra_studio_preview_not_found',
@@ -468,7 +468,7 @@ final class Lyra_Studio_Preview_Bridge {
 		}
 
 		$expires_at = (int) get_post_meta( $post->ID, self::META_EXPIRES, true );
-		if ( ! $expires_at || $expires_at < time() ) {
+		if ( ! $allow_expired && ( ! $expires_at || $expires_at < time() ) ) {
 			return new WP_Error(
 				'lyra_studio_preview_expired',
 				__( 'The preview session has expired. Create a new preview.', 'lyra-studio-preview-bridge' ),
