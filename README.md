@@ -1,62 +1,53 @@
 # Lyra Studio
 
-Windows desktop workspace for discovering, configuring, and previewing Elementor widgets and page recipes from Lyra Core and future providers.
+Lyra Studio is a Windows desktop workspace for local widget editing, recipes, and responsive previews. Its normal workflow is entirely on the computer.
 
-## Development principles
+## Product boundary
 
-- Standalone Windows application built with .NET 8 WPF.
-- Provider-driven catalogs and schemas; no hardcoded Lyra widget catalog.
-- Lyra Studio does not modify Lyra Core or its development roadmap.
-- Preview is rendered by the real WordPress + Elementor frontend, never a local imitation.
-- Live previews use a separate optional WordPress Bridge and unique temporary draft pages. Existing published pages and Lyra Core Recipe Builder operations are not used.
+- No WordPress installation, server, website login, or Lyra Studio Bridge is required to open the app, import a provider manifest, edit widget settings, or use a local preview template.
+- The application does not contact WordPress during startup or normal editing.
+- Provider catalogs are imported from local JSON files.
+- Preview templates are static HTML/CSS supplied by the provider manifest. Lyra Studio renders them locally in its embedded preview surface. This is a provider-supplied local representation, not a claim that PHP/Elementor frontend rendering is running locally.
+- Future site publishing/export can be a separate, explicit feature. It is not required for the desktop workspace.
 
-## Run
+## Install on Windows
 
-Requirements: Windows, .NET 8 SDK, and the WebView2 Runtime.
+Use the single LyraStudio-Setup.exe installer from the GitHub Actions artifact.
 
-```powershell
-dotnet restore
-dotnet run --project src/LyraStudio
-```
+- The app is published as a self-contained win-x64 application. Users do not need to download or install .NET 8 separately.
+- The setup contains the Microsoft WebView2 Evergreen Standalone installer and installs it silently only when the runtime is missing.
+- The setup creates Start Menu shortcuts and optionally a desktop shortcut.
+- The packaged application is intended for 64-bit Windows.
 
-## Current workflow
+Developers building from source need the .NET 8 SDK. That is a development prerequisite only, not an end-user installation requirement.
 
-1. Install the separate **Lyra Studio Preview Bridge** WordPress plugin on the target site. Download the `LyraStudio-preview-bridge` artifact from the GitHub Actions run and install the ZIP through WordPress → Plugins → Add New → Upload Plugin.
-2. In your WordPress user profile, create a dedicated, revocable Application Password. Do not use your main account password.
-3. In Lyra Studio → **Connect WordPress**, enter the site URL, WordPress username, and Application Password. The desktop app protects the saved password with Windows DPAPI for the current Windows user. Authenticated REST requests are sent only over HTTPS.
-4. Import a provider Manifest. Its widget IDs must match the Elementor widget types registered on the connected site.
-5. Select a registered widget and choose **Create Elementor Preview**. Lyra Studio creates a new temporary WordPress draft through the Bridge and opens the returned WordPress + Elementor preview URL in WebView2.
-6. Editing settings updates that same temporary draft. **Close Preview** requests deletion of the exact session. If the app cannot confirm deletion, the server-side TTL cleanup is the fallback.
+## Local workflow
 
-The Application Password authenticates REST requests only. It does not sign WebView2 into WordPress. The embedded browser may ask you to log in normally with the same WordPress user to view the private draft preview.
+1. Open Lyra Studio. No server connection is shown or required.
+2. Select Import Manifest and choose a provider JSON manifest on the computer.
+3. Select a widget. Lyra Studio generates the controls from the provider schema.
+4. Edit scalar settings, groups, conditional fields, and repeater items. The nested JSON can be copied from the Inspector.
+5. The preview updates locally when the settings change. Use Desktop, Tablet, and Mobile to change the preview viewport.
+6. Widgets without a local preview template remain editable; the preview explains that the provider has not supplied a renderer for that widget yet.
 
-## Widget and Recipe editing
+## Local preview template contract
 
-1. Choose **Import Manifest** and select a provider JSON manifest.
-2. Browse discovered widgets and recipes.
-3. Select a widget to generate its Inspector from the provider's control schema.
-4. Edit scalar settings, groups, conditional fields, and repeater items (add/remove/reorder).
-5. Copy the resulting nested settings JSON.
+A widget may include a preview object with static html and css fields. HTML placeholders use {{setting.path}}; values are HTML-encoded before insertion. {{name}} and {{id}} expose the widget name and ID.
 
-Manifest import and WordPress capability discovery are read-only. The desktop preview bridge is the only current operation that writes WordPress data, and it creates a new draft page with a unique session marker. It never accepts an existing post ID or publishes a page. The Bridge does not yet translate Lyra Core PHP Recipe files into complete Elementor documents; Recipe Studio is a later milestone.
+The preview template cannot execute scripts or load remote content. The manifest loader rejects script/frame elements, event handlers, JavaScript URLs, remote URLs, CSS imports, and oversized templates. The WebView2 document also uses a restrictive Content Security Policy.
 
-## Tests
+See docs/provider-manifest-v1.md for the contract, docs/architecture.md for boundaries, and ROADMAP.md for progress.
 
-Run automated tests on Windows:
+## Build and test from source
 
-```powershell
-dotnet test tests/LyraStudio.Tests/LyraStudio.Tests.csproj --configuration Release
-```
+    dotnet restore
+    dotnet test tests/LyraStudio.Tests/LyraStudio.Tests.csproj --configuration Release
+    dotnet publish src/LyraStudio/LyraStudio.csproj --configuration Release -r win-x64 --self-contained true
 
-CI run 44756153679 completed the Windows build, all 34 automated tests, win-x64 publish, bridge ZIP packaging, upload of both artifacts, and PHP syntax validation.
+The CI workflow tests the app, publishes the self-contained Windows build, downloads the offline WebView2 installer, and creates the one-step Windows setup package.
 
-## Security and limitations
+## Current limitations
 
-- Use HTTPS and a dedicated, revocable WordPress Application Password.
-- The Application Password is stored encrypted with DPAPI CurrentUser; it is not stored as plaintext in the connection profile.
-- WordPress REST calls require an authenticated user with `edit_pages`.
-- The Bridge creates only temporary draft Pages, ties each to an owner and UUID, limits active sessions, and expires stale drafts. Deletion is restricted to the exact draft/session/owner match.
-- If cleanup cannot be confirmed, the desktop app reports it and the Bridge's server-side expiry cleanup remains the fallback.
-- Live end-to-end compatibility still needs testing on the target WordPress + Elementor installation. The bridge PHP syntax check and desktop CI do not prove that a particular site's Elementor version or theme renders every widget correctly.
-
-See [docs/architecture.md](docs/architecture.md), [docs/preview-integration-research.md](docs/preview-integration-research.md), [docs/preview-bridge-api-v1.md](docs/preview-bridge-api-v1.md), [ROADMAP.md](ROADMAP.md), and [docs/provider-manifest-v1.md](docs/provider-manifest-v1.md).
+- A provider must supply a static local preview template for each widget whose appearance should be shown. The generic settings editor remains usable without one.
+- The local preview shows the provider-authored template and is not the real Elementor/PHP frontend output.
+- Full recipe structure editing, saved local projects, undo/redo, media management, and export workflows remain on the roadmap.

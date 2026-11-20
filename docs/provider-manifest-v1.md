@@ -1,112 +1,62 @@
 # Provider Manifest v1
 
-Lyra Studio can import a provider manifest as a read-only discovery document. The contract belongs to Lyra Studio and does not require Lyra Core to change now. A future adapter may generate this document from a plugin, local project, or another compatible provider.
+Lyra Studio imports provider manifests from local files. The contract belongs to Lyra Studio and does not require Lyra Core to change immediately. A future provider adapter can generate this document from a plugin release, local source package, or another compatible provider.
 
 ## Top-level fields
 
 | Field | Type | Required | Meaning |
 |---|---|---:|---|
-| manifestVersion | integer | Yes | Contract version. Currently `1`. |
+| manifestVersion | integer | Yes | Contract version. Currently 1. |
 | providerId | string | Yes | Stable provider identifier. |
 | providerName | string | Yes | Human-readable provider name. |
 | providerVersion | string | No | Provider release/version. |
-| widgets | array | No | Discovered widget descriptors. |
-| recipes | array | No | Discovered recipe descriptors. |
+| widgets | array | No | Widget descriptors. |
+| recipes | array | No | Recipe descriptors. |
 
 ## Widget descriptor
 
-A widget contains `id`, `name`, optional `category`, `description`, `version`, and `controls`.
+A widget contains id, name, optional category, description, version, controls, and optional preview.
 
-Each control contains a stable `name`, display `label`, string `kind`, optional `description`, `required`, `defaultValue`, `options`, `children`, `conditions`, `constraints`, and `isResponsive`.
+Each control contains a stable name, display label, string kind, optional description, required, defaultValue, options, children, conditions, constraints, and isResponsive.
 
-Control kinds currently recognized by the desktop inspector include: `text`, `textarea`, `number`, `toggle`, `select`, `color`, `url`, `media`, `icon`, `group`, `repeater`, `typography`, `dimensions`, `slider`, and `date`. Unknown kinds are retained and displayed as raw text/JSON instead of being dropped.
+Supported control kinds include text, textarea, number, toggle, select, color, url, media, icon, group, repeater, typography, dimensions, slider, and date. Unknown kinds are retained rather than dropped.
 
-A repeater control uses its `children` array as its per-item field schema. Lyra Studio renders each item as a card and supports adding, removing, and reordering items. Each item's nested fields are generated from the same control schema. The `constraints.min_items` and `constraints.max_items` values enforce collection limits. If `max_items` is omitted, the desktop editor defaults to 100; a value of 0 means no configured maximum.
+A repeater uses its children array as its per-item field schema. The Inspector supports adding, removing, reordering, and min/max item limits.
 
-## Recipe descriptor
+## Local preview
 
-A recipe contains `id`, `name`, `format`, optional `description`, `formatVersion`, and `previewImage`. The app does not assume that every recipe is Elementor JSON or PHP.
+A widget may provide a preview object:
+- html: static HTML template.
+- css: optional static CSS.
 
-## Example
+Use {{setting.path}} placeholders to insert values. Dotted paths resolve nested objects; numeric segments can resolve array items. Dynamic values are HTML-encoded. Two built-in tokens are supported: {{name}} and {{id}}.
 
-The following is an illustrative contract example only. It is not a hardcoded widget shipped by Lyra Studio and does not claim to represent any current Lyra Core widget.
+Example:
 
-```json
-{
-  "manifestVersion": 1,
-  "providerId": "example.provider",
-  "providerName": "Example Provider",
-  "providerVersion": "0.1.0",
-  "widgets": [
     {
       "id": "example.notice",
       "name": "Notice",
-      "category": "Content",
-      "description": "Illustrative widget used to explain the manifest format.",
       "controls": [
-        {
-          "name": "title",
-          "label": "Title",
-          "kind": "text",
-          "required": true,
-          "defaultValue": "Hello"
-        },
-        {
-          "name": "show_link",
-          "label": "Show link",
-          "kind": "toggle",
-          "defaultValue": false
-        },
-        {
-          "name": "link_text",
-          "label": "Link text",
-          "kind": "text",
-          "defaultValue": "Learn more",
-          "conditions": [
-            { "field": "show_link", "operator": "equals", "value": true }
-          ]
-        },
-        {
-          "name": "items",
-          "label": "Items",
-          "kind": "repeater",
-          "defaultValue": []
-        },
-        {
-          "name": "layout",
-          "label": "Layout",
-          "kind": "group",
-          "children": [
-            {
-              "name": "columns",
-              "label": "Columns",
-              "kind": "select",
-              "defaultValue": "2",
-              "options": [
-                { "label": "Two", "value": "2" },
-                { "label": "Three", "value": "3" }
-              ]
-            }
-          ]
-        }
-      ]
+        { "name": "title", "label": "Title", "kind": "text", "defaultValue": "Hello" },
+        { "name": "subtitle", "label": "Subtitle", "kind": "text", "defaultValue": "Local preview" }
+      ],
+      "preview": {
+        "html": "<article class='notice'><h2>{{title}}</h2><p>{{subtitle}}</p></article>",
+        "css": ".notice { padding: 24px; border-radius: 12px; background: white; }"
+      }
     }
-  ],
-  "recipes": [
-    {
-      "id": "example.landing",
-      "name": "Example Landing",
-      "description": "Illustrative recipe descriptor.",
-      "format": "example-json",
-      "formatVersion": "1"
-    }
-  ]
-}
-```
 
-## Safety and compatibility
+Preview templates must be static. Scripts, frames, embedded objects, forms, event-handler attributes, JavaScript URLs, remote URLs, external links, CSS imports, and style terminators are rejected. Templates have size limits and the rendered document applies a restrictive Content Security Policy. Providers can embed local images as data URLs; remote resources are not loaded.
 
-- Importing a manifest only reads the selected local JSON file.
-- It does not execute provider code, PHP, JavaScript, or recipe content.
-- Manifest version mismatch, missing required identifiers, and duplicate widget/recipe/control identifiers are rejected with a readable validation error.
-- A manifest describes controls; it does not grant the application a live preview endpoint or permission to write to WordPress.
+A widget without preview remains editable and displays a message explaining that no local preview template is available. The local preview is a provider-authored representation, not the actual WordPress/Elementor PHP frontend.
+
+## Recipe descriptor
+
+A recipe contains id, name, format, optional description, formatVersion, and previewImage. The app does not assume every recipe format is JSON or PHP.
+
+## Compatibility and safety
+
+- Import reads a local JSON file and does not execute provider code.
+- No WordPress server or internet connection is required.
+- Manifest version mismatches, missing identifiers, duplicate IDs, and unsafe preview templates are rejected.
+- The manifest grants no remote permissions and has no server-side side effects.
