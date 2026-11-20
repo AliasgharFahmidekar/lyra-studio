@@ -1,19 +1,14 @@
 # Lyra Studio
 
-Windows desktop workspace for inspecting, configuring, and previewing widgets and page recipes provided by Lyra Core and future Lyra extensions.
+Windows desktop workspace for discovering, configuring, and previewing Elementor widgets and page recipes from Lyra Core and future providers.
 
-## Development status
+## Development principles
 
-The application is provider-driven and intentionally independent from the Lyra Core plugin source. It does not modify the plugin, assume a fixed widget list, or ship fabricated widget previews.
-
-## Technology
-
-- .NET 8 WPF
-- WebView2 for the real-render preview surface
-- HTTP/WordPress REST connectivity isolated behind services
-- Versioned JSON provider manifests
-- Schema-driven inspector models for typed controls, groups, conditions, repeaters, and structured values
-- Optional, separate WordPress Preview Bridge for temporary Elementor draft sessions
+- Standalone Windows application built with .NET 8 WPF.
+- Provider-driven catalogs and schemas; no hardcoded Lyra widget catalog.
+- Lyra Studio does not modify Lyra Core or its development roadmap.
+- Preview is rendered by the real WordPress + Elementor frontend, never a local imitation.
+- Live previews use a separate optional WordPress Bridge and unique temporary draft pages. Existing published pages and Lyra Core Recipe Builder operations are not used.
 
 ## Run
 
@@ -26,23 +21,24 @@ dotnet run --project src/LyraStudio
 
 ## Current workflow
 
-1. Open Lyra Studio on Windows.
-2. Choose **Import Manifest** and select a provider JSON manifest.
-3. Browse the discovered widgets or recipes.
-4. Select a widget to generate its settings inspector from the manifest schema.
-5. Edit repeater items with add, remove, and reorder controls.
-6. Adjust values and copy the resulting nested settings JSON.
-7. Use **Connect WordPress** to inspect the site's public REST API namespaces and declared routes.
+1. Install the separate **Lyra Studio Preview Bridge** WordPress plugin on the target site. Download the `LyraStudio-preview-bridge` artifact from the GitHub Actions run and install the ZIP through WordPress → Plugins → Add New → Upload Plugin.
+2. In your WordPress user profile, create a dedicated, revocable Application Password. Do not use your main account password.
+3. In Lyra Studio → **Connect WordPress**, enter the site URL, WordPress username, and Application Password. The desktop app protects the saved password with Windows DPAPI for the current Windows user. Authenticated REST requests are sent only over HTTPS.
+4. Import a provider Manifest. Its widget IDs must match the Elementor widget types registered on the connected site.
+5. Select a registered widget and choose **Create Elementor Preview**. Lyra Studio creates a new temporary WordPress draft through the Bridge and opens the returned WordPress + Elementor preview URL in WebView2.
+6. Editing settings updates that same temporary draft. **Close Preview** requests deletion of the exact session. If the app cannot confirm deletion, the server-side TTL cleanup is the fallback.
 
-Manifest import and WordPress capability discovery are read-only. They do not execute manifest content or modify WordPress. The inspector supports common scalar controls, nested groups, conditional visibility, and schema-generated repeater item fields with collection limits.
+The Application Password authenticates REST requests only. It does not sign WebView2 into WordPress. The embedded browser may ask you to log in normally with the same WordPress user to view the private draft preview.
 
-## Real Elementor preview integration
+## Widget and Recipe editing
 
-The optional **Lyra Studio Preview Bridge** is a separate WordPress plugin under [integrations/lyra-studio-preview-bridge](integrations/lyra-studio-preview-bridge). It does not modify or depend on Lyra Core. It provides authenticated REST routes to create, update, and delete only uniquely marked temporary WordPress draft pages rendered by Elementor.
+1. Choose **Import Manifest** and select a provider JSON manifest.
+2. Browse discovered widgets and recipes.
+3. Select a widget to generate its Inspector from the provider's control schema.
+4. Edit scalar settings, groups, conditional fields, and repeater items (add/remove/reorder).
+5. Copy the resulting nested settings JSON.
 
-The bridge package is not automatically installed on a WordPress site. Download the `LyraStudio-preview-bridge` artifact from GitHub Actions and install it separately when ready to test real previews. Use a dedicated, revocable WordPress Application Password over HTTPS for REST requests. The Application Password authenticates API calls only; WebView2 still needs a normal WordPress browser session to display a private draft preview.
-
-**The desktop app's Bridge client and full live-preview workflow are not yet implemented.** The current release only provides the standalone bridge package and REST capability diagnostics. No existing published page or Lyra Core recipe is used for preview.
+Manifest import and WordPress capability discovery are read-only. The desktop preview bridge is the only current operation that writes WordPress data, and it creates a new draft page with a unique session marker. It never accepts an existing post ID or publishes a page. The Bridge does not yet translate Lyra Core PHP Recipe files into complete Elementor documents; Recipe Studio is a later milestone.
 
 ## Tests
 
@@ -52,15 +48,15 @@ Run automated tests on Windows:
 dotnet test tests/LyraStudio.Tests/LyraStudio.Tests.csproj --configuration Release
 ```
 
-The Windows CI also runs PHP syntax validation for the optional bridge.
+CI run 44756153679 completed the Windows build, all 34 automated tests, win-x64 publish, bridge ZIP packaging, upload of both artifacts, and PHP syntax validation.
 
-## Architecture principles
+## Security and limitations
 
-1. **Plugin-agnostic desktop:** all plugin-specific integration lives behind a provider/adapter boundary.
-2. **No Lyra Core changes:** the desktop app and optional preview bridge are maintained separately from the Lyra Core development path.
-3. **No hardcoded widget catalog:** widgets, controls, recipes, templates, and their versions come from provider data.
-4. **Real previews only:** the preview surface must display HTML rendered by the actual WordPress + Elementor runtime. A local imitation is never presented as a real preview.
-5. **Safe editing:** manifest imports and capability discovery are read-only. Preview writes are restricted to a dedicated temporary draft with an exact session marker.
-6. **Future-proof controls:** inspector controls are represented as typed metadata, including nested groups, repeaters, responsive values, conditions, and defaults.
+- Use HTTPS and a dedicated, revocable WordPress Application Password.
+- The Application Password is stored encrypted with DPAPI CurrentUser; it is not stored as plaintext in the connection profile.
+- WordPress REST calls require an authenticated user with `edit_pages`.
+- The Bridge creates only temporary draft Pages, ties each to an owner and UUID, limits active sessions, and expires stale drafts. Deletion is restricted to the exact draft/session/owner match.
+- If cleanup cannot be confirmed, the desktop app reports it and the Bridge's server-side expiry cleanup remains the fallback.
+- Live end-to-end compatibility still needs testing on the target WordPress + Elementor installation. The bridge PHP syntax check and desktop CI do not prove that a particular site's Elementor version or theme renders every widget correctly.
 
 See [docs/architecture.md](docs/architecture.md), [docs/preview-integration-research.md](docs/preview-integration-research.md), [docs/preview-bridge-api-v1.md](docs/preview-bridge-api-v1.md), [ROADMAP.md](ROADMAP.md), and [docs/provider-manifest-v1.md](docs/provider-manifest-v1.md).

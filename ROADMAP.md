@@ -29,15 +29,15 @@ This roadmap is the source of truth for release scope and progress. Percentages 
 - [x] Visual repeater editor with schema-generated nested fields, add/remove/reorder, and min/max enforcement
 - [x] Automated tests passing in Windows CI for manifest validation, repeater operations, settings JSON serialization, and conditional visibility (14/14 passed, run 44751045277)
 
-### v0.3.0 — Real Elementor preview · 57% · Current
+### v0.3.0 — Real Elementor preview · 86% · Current
 
 - [x] Verify supplied Lyra Core 0.1.1 and Elementor preview/render capabilities without changing Core
 - [x] Read-only WordPress REST discovery diagnostics (24/24 tests passed, run 44752714846)
 - [x] Select and document the optional, separate WordPress Preview Bridge transport
-- [x] Implement authenticated temporary-draft Bridge endpoints with owner/session-bound updates, deletion, TTL and exact-draft cleanup (PHP syntax CI validation required)
-- [ ] Implement the WPF provider client and encrypted WordPress Application Password storage
-- [ ] Add preview create/update/close workflow and navigate WebView2 to actual Elementor output
-- [ ] Run end-to-end validation against a real WordPress + Elementor site and add desktop/tablet/mobile preview controls
+- [x] Implement authenticated temporary-draft Bridge endpoints with owner/session-bound updates, deletion, TTL and exact-draft cleanup (PHP lint passed, run 44756153679)
+- [x] Implement WPF Bridge client and DPAPI CurrentUser encryption for WordPress Application Passwords
+- [x] Add widget preview create/update/close workflow and navigate WebView2 to the actual WordPress + Elementor draft preview URL
+- [ ] Run end-to-end validation against a real WordPress + Elementor site and add desktop/tablet/mobile viewport controls
 
 ### v0.4.0 — Recipe Studio · 0%
 
@@ -67,7 +67,21 @@ This roadmap is the source of truth for release scope and progress. Percentages 
 
 Release weights are fixed: v0.1.0 = 10%, v0.2.0 = 20%, v0.3.0 = 25%, v0.4.0 = 20%, v0.5.0 = 15%, v1.0.0 = 10%. The project percentage is the weighted sum of release completion percentages. Percentages are rounded to the nearest whole number for display.
 
-Current weighted project progress: **44%** (v0.1.0: 100% × 10%, v0.2.0: 100% × 20%, v0.3.0: 4/7 = 57.1% × 25%, later releases: 0%; unrounded total 44.29%).
+Current weighted project progress: **51%** (v0.1.0: 100% × 10%, v0.2.0: 100% × 20%, v0.3.0: 6/7 = 85.7% × 25%, later releases: 0%; unrounded total 51.43%).
+
+## Latest CI verification
+
+Windows workflow run: 44756153679
+
+- Desktop build: succeeded
+- Automated tests: 34 passed, 0 failed
+- win-x64 publish: succeeded
+- Optional Preview Bridge package: uploaded
+- PHP syntax lint: succeeded
+- App artifact: `LyraStudio-win-x64`
+- Bridge artifact: `LyraStudio-preview-bridge`
+
+The bridge has passed PHP syntax lint, but its real WordPress/Elementor behavior has not yet been exercised on the target site. End-to-end validation remains open.
 
 ## Progress update protocol
 

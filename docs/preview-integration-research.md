@@ -29,7 +29,7 @@ Elementor's Documents Manager exposes a `create()` method accepting document typ
 
 The selected path is an additional standalone WordPress plugin at `integrations/lyra-studio-preview-bridge`. It does not modify, extend, or require changes to Lyra Core. This keeps the Core roadmap independent while providing a narrow, versioned transport for the desktop application.
 
-The bridge's current API:
+The bridge's API:
 
 - `GET /wp-json/lyra-studio/v1/capabilities` — authenticated capability report including Elementor version and registered widget identifiers.
 - `POST /wp-json/lyra-studio/v1/previews` — creates a unique, owner-bound temporary Page in `draft` status, saves the Elementor element tree, and returns the actual preview URL.
@@ -38,16 +38,29 @@ The bridge's current API:
 
 The bridge enforces a five-session per-user limit, a default 30-minute TTL (maximum two hours), and a 2 MB combined document payload limit. Its cleanup only deletes a WordPress Page that remains a draft and has the matching session UUID and owner marker. Deactivation stops cleanup and intentionally leaves drafts untouched.
 
-The bridge requires a logged-in WordPress user with `edit_pages`. For remote desktop REST requests, use HTTPS and a dedicated, revocable WordPress Application Password. Application Password authentication applies to REST requests only; it does not log WebView2 into the normal website. The embedded browser will need a normal WordPress browser session to open the private draft preview.
+The bridge requires a logged-in WordPress user with `edit_pages`. Remote desktop REST requests use HTTPS and a dedicated, revocable WordPress Application Password. In the WPF app, the password is protected using DPAPI with `DataProtectionScope.CurrentUser`; the connection profile stores only the encrypted Base64 value. The Bridge client refuses authenticated requests over HTTP and validates that a returned preview URL stays on the same WordPress origin.
+
+Application Password authentication applies to REST requests only; it does not log WebView2 into the normal website. The embedded browser needs a normal WordPress browser session to open the private draft preview.
+
+## Desktop workflow implemented
+
+- Read-only WordPress REST discovery and authenticated Bridge capability detection.
+- Widget preview is enabled only when the connected Elementor site reports the exact widget ID from the selected Manifest.
+- Lyra Studio generates a minimal Elementor Section → Column → Widget tree and sends the widget settings.
+- The Bridge creates the temporary draft; the exact server-returned preview URL is opened by WebView2.
+- Inspector changes are debounced and update the same session's draft.
+- Close Preview requests deletion by the exact session UUID. Application closing also attempts session cleanup.
+- If cleanup cannot be confirmed, the desktop app reports the issue and leaves the Bridge's expiry cleanup as fallback.
 
 ## Boundaries and remaining work
 
-- The bridge is implemented as a separate optional integration and does not alter Lyra Core.
-- PHP syntax is checked in Windows project CI using a Linux PHP lint job.
-- The WPF Bridge client, secure Application Password storage, create/update/cleanup UI, and WebView2 preview navigation are not yet implemented.
-- Live end-to-end behavior has not yet been verified against a real WordPress + Elementor site. Do not treat the PHP syntax check as that verification.
-- The bridge does not call Elementor's global CSS cache clear operation because it can affect unrelated pages across the site.
-- The bridge receives an Elementor element tree; it does not parse Lyra Core PHP Recipe files into a complete page yet.
+- The bridge and desktop client are implemented in separate Lyra Studio paths; Lyra Core remains unchanged.
+- Windows CI run 44756153679 passed 34 automated tests, app build, win-x64 publish, Bridge ZIP packaging/upload, and PHP lint.
+- Tests cover route construction, Elementor document tree shape, settings nesting, and DPAPI round-tripping on Windows.
+- Live end-to-end behavior has **not** yet been verified against the target WordPress + Elementor installation.
+- Desktop/tablet/mobile viewport controls remain open.
+- The Bridge accepts an Elementor element tree; it does not convert Lyra Core PHP Recipe files into a complete page yet.
+- The Bridge does not call Elementor's global CSS cache clear operation because it can affect unrelated pages across the site.
 
 ## Sources
 
@@ -60,4 +73,4 @@ The bridge requires a logged-in WordPress user with `edit_pages`. For remote des
 
 ## Current conclusion
 
-Lyra Core 0.1.1 provides no safe preview endpoint. The selected solution is an optional independent Preview Bridge that creates isolated WordPress drafts and uses the real Elementor render pipeline. The desktop app still needs its authenticated provider client and WebView2 integration, followed by end-to-end validation on the target site.
+Lyra Core 0.1.1 provides no safe preview endpoint. Lyra Studio now has an optional, independent Preview Bridge and an authenticated WPF client for temporary draft previews. The application flow is implemented and CI-tested. Live-site end-to-end validation, responsive preview controls, and complete Recipe-to-Elementor serialization remain future work.
