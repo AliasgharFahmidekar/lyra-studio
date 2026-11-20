@@ -99,6 +99,48 @@ public sealed class ProviderManifestLoaderTests
         Assert.Contains("Duplicate control", exception.Message);
     }
 
+    [Fact]
+    public async Task RejectsScriptInLocalPreviewTemplate()
+    {
+        const string json = """
+        {
+          "manifestVersion": 1,
+          "providerId": "test",
+          "providerName": "Test",
+          "widgets": [{
+            "id": "test.card",
+            "name": "Test Card",
+            "preview": { "html": "<div>safe</div><script>alert(1)</script>", "css": "" }
+          }],
+          "recipes": []
+        }
+        """;
+
+        var exception = await Assert.ThrowsAsync<InvalidDataException>(() => LoadFromText(json));
+        Assert.Contains("forbidden", exception.Message);
+    }
+
+    [Fact]
+    public async Task RejectsRemoteCssResourcesInLocalPreviewTemplate()
+    {
+        const string json = """
+        {
+          "manifestVersion": 1,
+          "providerId": "test",
+          "providerName": "Test",
+          "widgets": [{
+            "id": "test.card",
+            "name": "Test Card",
+            "preview": { "html": "<div>safe</div>", "css": ".card { background: url('https://example.test/a.png'); }" }
+          }],
+          "recipes": []
+        }
+        """;
+
+        var exception = await Assert.ThrowsAsync<InvalidDataException>(() => LoadFromText(json));
+        Assert.Contains("forbidden", exception.Message);
+    }
+
     private async Task<ProviderManifest> LoadFromText(string json)
     {
         var path = Path.Combine(Path.GetTempPath(), $"lyra-manifest-{Guid.NewGuid():N}.json");
