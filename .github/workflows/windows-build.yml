@@ -1,0 +1,30 @@
+name: Windows build
+
+on:
+  push:
+    branches: [main, "work/**"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Restore
+        run: dotnet restore src/LyraStudio/LyraStudio.csproj
+      - name: Build
+        run: dotnet build src/LyraStudio/LyraStudio.csproj --configuration Release --no-restore
+      - name: Publish Windows app
+        run: dotnet publish src/LyraStudio/LyraStudio.csproj --configuration Release --no-restore --runtime win-x64 --self-contained false -p:PublishSingleFile=true -o artifacts/win-x64
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LyraStudio-win-x64
+          path: artifacts/win-x64/
