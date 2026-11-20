@@ -1,0 +1,79 @@
+<Window x:Class="LyraStudio.MainWindow"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+ Title="Lyra Studio" Height="820" Width="1440" MinHeight="650" MinWidth="1100"
+ WindowStartupLocation="CenterScreen" Background="{StaticResource WindowBrush}">
+ <Grid>
+  <Grid.RowDefinitions><RowDefinition Height="62"/><RowDefinition Height="*"/><RowDefinition Height="28"/></Grid.RowDefinitions>
+  <Border Grid.Row="0" Background="#FFFFFF" BorderBrush="#E8EAF0" BorderThickness="0,0,0,1">
+   <Grid Margin="20,0">
+    <Grid.ColumnDefinitions><ColumnDefinition Width="250"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+     <Border Width="34" Height="34" CornerRadius="10" Background="#7567E8" Margin="0,0,11,0">
+      <TextBlock Text="L" Foreground="White" FontSize="21" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+     </Border>
+     <StackPanel VerticalAlignment="Center"><TextBlock Text="Lyra Studio" FontSize="16" FontWeight="Bold" Foreground="#202432"/><TextBlock Text="WIDGET WORKSPACE" FontSize="9" Foreground="#8992A3" CharacterSpacing="120"/></StackPanel>
+    </StackPanel>
+    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+     <Ellipse x:Name="ConnectionDot" Width="8" Height="8" Fill="#D59B38" Margin="0,0,8,0"/>
+     <TextBlock x:Name="ConnectionLabel" Text="Not connected" Foreground="#697386" VerticalAlignment="Center" Margin="0,0,16,0"/>
+     <Button Content="Connect WordPress" Click="Connect_Click"/>
+    </StackPanel>
+   </Grid>
+  </Border>
+  <Grid Grid.Row="1">
+   <Grid.ColumnDefinitions><ColumnDefinition Width="220"/><ColumnDefinition Width="*"/><ColumnDefinition Width="310"/></Grid.ColumnDefinitions>
+   <Border Grid.Column="0" Background="{StaticResource SidebarBrush}">
+    <DockPanel Margin="14">
+     <StackPanel DockPanel.Dock="Top">
+      <TextBlock Text="WORKSPACE" Foreground="#788195" FontSize="10" FontWeight="Bold" Margin="9,12,0,12"/>
+      <Button Content="  ◈   Widget Library" HorizontalContentAlignment="Left" Background="#2A2E3B" Margin="0,0,0,5" Click="Widgets_Click"/>
+      <Button Content="  ▦   Recipe Studio" HorizontalContentAlignment="Left" Background="Transparent" Foreground="#C4CAD5" Margin="0,0,0,5" Click="Recipes_Click"/>
+      <TextBlock Text="CONNECTION" Foreground="#788195" FontSize="10" FontWeight="Bold" Margin="9,28,0,12"/>
+      <Button Content="  ⚙   WordPress Setup" HorizontalContentAlignment="Left" Background="Transparent" Foreground="#C4CAD5" Click="Connect_Click"/>
+     </StackPanel>
+     <StackPanel DockPanel.Dock="Bottom" Margin="8,0,8,10">
+      <TextBlock Text="LYRA STUDIO" Foreground="#788195" FontSize="10" FontWeight="Bold"/>
+      <TextBlock Text="Desktop foundation · 0.1.0" Foreground="#9AA3B3" FontSize="11" Margin="0,5,0,0"/>
+     </StackPanel>
+    </DockPanel>
+   </Border>
+   <Grid Grid.Column="1" Margin="20">
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+    <Grid Margin="2,0,2,16">
+     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+     <StackPanel><TextBlock x:Name="PageTitle" Text="Widget Library" FontSize="22" FontWeight="Bold" Foreground="#202432"/><TextBlock x:Name="PageSubtitle" Text="Connect a WordPress site to discover its Lyra widgets." Foreground="#8992A3" Margin="0,5,0,0"/></StackPanel>
+     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+      <Border Background="#FFFFFF" CornerRadius="7" Padding="12,8" Margin="0,0,8,0"><TextBlock Text="Preview: Desktop" Foreground="#626B7A"/></Border>
+      <Button Content="Refresh" Background="#252B39" Click="Refresh_Click"/>
+     </StackPanel>
+    </Grid>
+    <Border Grid.Row="1" Background="#FFFFFF" CornerRadius="12" BorderBrush="#E6E9EF" BorderThickness="1">
+     <Grid>
+      <wv2:WebView2 x:Name="PreviewBrowser" Visibility="Collapsed"/>
+      <StackPanel x:Name="EmptyState" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="430">
+       <Border Width="66" Height="66" CornerRadius="18" Background="#F0EEFF" HorizontalAlignment="Center" Margin="0,0,0,18"><TextBlock Text="⌘" FontSize="32" Foreground="#7567E8" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+       <TextBlock x:Name="EmptyTitle" Text="Your widget workspace is ready" FontSize="19" FontWeight="Bold" Foreground="#252B39" HorizontalAlignment="Center"/>
+       <TextBlock x:Name="EmptyDescription" Text="Connect a WordPress site to load the widgets and recipes that are actually available. Lyra Studio does not ship a hardcoded or simulated widget catalog." TextWrapping="Wrap" TextAlignment="Center" Foreground="#8992A3" Margin="0,10,0,20" LineHeight="22"/>
+       <Button Content="Connect WordPress site" Click="Connect_Click"/>
+      </StackPanel>
+     </Grid>
+    </Border>
+   </Grid>
+   <Border Grid.Column="2" Background="#FFFFFF" BorderBrush="#E8EAF0" BorderThickness="1,0,0,0">
+    <StackPanel Margin="18">
+     <TextBlock Text="INSPECTOR" FontSize="10" FontWeight="Bold" Foreground="#8992A3" Margin="0,5,0,18"/>
+     <TextBlock Text="Nothing selected" FontSize="16" FontWeight="Bold" Foreground="#252B39"/>
+     <TextBlock Text="Select a discovered widget or a recipe element to inspect its controls. The inspector will be generated from the provider's control schema, not maintained as a separate list in this app." TextWrapping="Wrap" Foreground="#8992A3" Margin="0,8,0,0" LineHeight="21"/>
+     <Border Background="#F7F8FA" CornerRadius="8" Padding="12" Margin="0,22,0,0">
+      <StackPanel><TextBlock Text="SUPPORTED CONTROL MODEL" FontSize="9" FontWeight="Bold" Foreground="#7567E8" Margin="0,0,0,8"/><TextBlock Text="Text · Number · Toggle · Select · Color · Link · Media · Repeater · Group · Responsive" TextWrapping="Wrap" Foreground="#667085" FontSize="11" LineHeight="18"/></StackPanel>
+     </Border>
+    </StackPanel>
+   </Border>
+  </Grid>
+  <Border Grid.Row="2" Background="#FFFFFF" BorderBrush="#E8EAF0" BorderThickness="0,1,0,0">
+   <Grid Margin="14,0"><TextBlock x:Name="StatusText" Text="Ready · No WordPress connection configured" Foreground="#8992A3" FontSize="10" VerticalAlignment="Center"/><TextBlock Text=".NET 8 · WebView2" Foreground="#8992A3" FontSize="10" HorizontalAlignment="Right" VerticalAlignment="Center"/></Grid>
+  </Border>
+ </Grid>
+</Window>
