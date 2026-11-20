@@ -1,13 +1,41 @@
 <Window x:Class="LyraStudio.ConnectionWindow"
  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
- Title="Connect WordPress" Width="480" Height="270" ResizeMode="NoResize"
+ Title="Connect WordPress" Width="520" Height="500" ResizeMode="NoResize"
  WindowStartupLocation="CenterOwner" Background="#F4F6F8">
- <Grid Margin="24">
-  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-  <StackPanel><TextBlock Text="Connect a WordPress site" FontSize="20" FontWeight="Bold" Foreground="#202432"/><TextBlock Text="Only the public REST API root is checked. No plugin files or site content are changed." Foreground="#8992A3" TextWrapping="Wrap" Margin="0,7,0,18"/></StackPanel>
-  <StackPanel Grid.Row="1"><TextBlock Text="SITE URL" FontSize="10" FontWeight="Bold" Foreground="#667085" Margin="0,0,0,7"/><TextBox x:Name="SiteUrlBox" Height="38" Padding="10,8" BorderBrush="#DDE1E8" BorderThickness="1" VerticalContentAlignment="Center"/></StackPanel>
-  <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
+ <Grid Margin="26">
+  <Grid.RowDefinitions>
+   <RowDefinition Height="Auto"/>
+   <RowDefinition Height="Auto"/>
+   <RowDefinition Height="Auto"/>
+   <RowDefinition Height="Auto"/>
+   <RowDefinition Height="*"/>
+   <RowDefinition Height="Auto"/>
+  </Grid.RowDefinitions>
+  <StackPanel Margin="0,0,0,20">
+   <TextBlock Text="Connect a WordPress site" FontSize="20" FontWeight="Bold" Foreground="#202432"/>
+   <TextBlock Text="REST discovery is read-only. Preview Bridge uses a dedicated WordPress Application Password and creates temporary draft pages only." Foreground="#8992A3" TextWrapping="Wrap" Margin="0,7,0,0" LineHeight="19"/>
+  </StackPanel>
+  <StackPanel Grid.Row="1" Margin="0,0,0,14">
+   <TextBlock Text="SITE URL" FontSize="10" FontWeight="Bold" Foreground="#667085" Margin="0,0,0,6"/>
+   <TextBox x:Name="SiteUrlBox" Height="38" Padding="10,8" BorderBrush="#DDE1E8" BorderThickness="1" VerticalContentAlignment="Center"/>
+  </StackPanel>
+  <StackPanel Grid.Row="2" Margin="0,0,0,14">
+   <TextBlock Text="WORDPRESS USERNAME" FontSize="10" FontWeight="Bold" Foreground="#667085" Margin="0,0,0,6"/>
+   <TextBox x:Name="WordPressUsernameBox" Height="38" Padding="10,8" BorderBrush="#DDE1E8" BorderThickness="1" VerticalContentAlignment="Center"/>
+  </StackPanel>
+  <StackPanel Grid.Row="3" Margin="0,0,0,10">
+   <TextBlock Text="APPLICATION PASSWORD" FontSize="10" FontWeight="Bold" Foreground="#667085" Margin="0,0,0,6"/>
+   <PasswordBox x:Name="ApplicationPasswordBox" Height="38" Padding="10,8" BorderBrush="#DDE1E8" BorderThickness="1" VerticalContentAlignment="Center"/>
+   <CheckBox x:Name="ClearSavedPasswordCheckBox" Content="Remove saved Application Password" Foreground="#9A5660" FontSize="11" Margin="0,9,0,0"/>
+  </StackPanel>
+  <Border Grid.Row="4" Background="#F0EEFF" CornerRadius="8" Padding="12" VerticalAlignment="Top">
+   <StackPanel>
+    <TextBlock Text="SECURITY NOTE" FontWeight="Bold" FontSize="10" Foreground="#6656CE" Margin="0,0,0,5"/>
+    <TextBlock Text="Create a separate, revocable Application Password in your WordPress profile. Do not enter your main account password. Lyra Studio encrypts the saved Application Password for the current Windows user with DPAPI. Use HTTPS. The preview browser may separately ask you to sign in to WordPress." Foreground="#65617E" FontSize="11" TextWrapping="Wrap" LineHeight="18"/>
+   </StackPanel>
+  </Border>
+  <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,20,0,0">
    <Button Content="Cancel" Background="#E5E7EB" Foreground="#303746" Margin="0,0,8,0" Click="Cancel_Click"/>
    <Button Content="Save &amp; Test" Click="Save_Click"/>
   </StackPanel>

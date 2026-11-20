@@ -21,6 +21,7 @@
     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
      <Ellipse x:Name="ConnectionDot" Width="8" Height="8" Fill="#D59B38" Margin="0,0,8,0"/>
      <TextBlock x:Name="ConnectionLabel" Text="Not connected" Foreground="#697386" VerticalAlignment="Center" Margin="0,0,16,0"/>
+     <Button x:Name="ClosePreviewButton" Content="Close Preview" Background="#252B39" Margin="0,0,8,0" IsEnabled="False" Click="ClosePreview_Click"/>
      <Button Content="Import Manifest" Background="#252B39" Margin="0,0,8,0" Click="ImportManifest_Click"/>
      <Button Content="Connect WordPress" Click="Connect_Click"/>
     </StackPanel>
@@ -84,6 +85,8 @@
          <Border Background="#F7F8FA" CornerRadius="8" Padding="14">
           <TextBlock x:Name="PreviewMessage" Text="The live preview will become available when a compatible preview provider is connected. This catalog view does not simulate rendered Elementor output." Foreground="#697386" TextWrapping="Wrap" TextAlignment="Center" LineHeight="20"/>
          </Border>
+         <Button x:Name="CreatePreviewButton" Content="Create Elementor Preview" Margin="0,14,0,0" Click="CreatePreview_Click" IsEnabled="False"/>
+         <TextBlock x:Name="PreviewHint" Text="Connect a site with the optional Preview Bridge to render this widget." Foreground="#8992A3" TextWrapping="Wrap" TextAlignment="Center" FontSize="10" Margin="0,8,0,0"/>
         </StackPanel>
        </Grid>
       </Grid>
