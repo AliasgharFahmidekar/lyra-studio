@@ -8,7 +8,7 @@ public static class ConditionEvaluator
 {
     public static bool Matches(
         IReadOnlyList<ControlCondition>? conditions,
-        IReadOnlyDictionary<string, object?> values,
+        IDictionary<string, object?> values,
         string? pathPrefix = null)
     {
         if (conditions is null || conditions.Count == 0) return true;

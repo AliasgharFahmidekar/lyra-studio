@@ -12,7 +12,7 @@ The application is provider-driven and intentionally independent from the Lyra C
 - WebView2 for the real-render preview surface
 - HTTP/WordPress REST connectivity isolated behind services
 - Versioned JSON provider manifests
-- Schema-driven inspector models for typed controls, groups, conditions, and structured values
+- Schema-driven inspector models for typed controls, groups, conditions, repeaters, and structured values
 
 ## Run
 
@@ -29,9 +29,18 @@ dotnet run --project src/LyraStudio
 2. Choose **Import Manifest** and select a provider JSON manifest.
 3. Browse the discovered widgets or recipes.
 4. Select a widget to generate its settings inspector from the manifest schema.
-5. Adjust values and copy the resulting settings JSON.
+5. Edit repeater items with add, remove, and reorder controls.
+6. Adjust values and copy the resulting nested settings JSON.
 
-Manifest import is read-only. It does not execute manifest content or modify WordPress. The current inspector supports common scalar controls, groups, conditions, and structured JSON values. The full visual repeater editor and real Elementor preview are scheduled for later releases.
+Manifest import is read-only. It does not execute manifest content or modify WordPress. The inspector supports common scalar controls, nested groups, conditional visibility, and schema-generated repeater item fields with collection limits. Real Elementor preview is scheduled for a later release.
+
+## Tests
+
+Run automated tests on Windows:
+
+```powershell
+dotnet test tests/LyraStudio.Tests/LyraStudio.Tests.csproj --configuration Release
+```
 
 ## Architecture principles
 
@@ -42,4 +51,4 @@ Manifest import is read-only. It does not execute manifest content or modify Wor
 5. **Safe editing:** importing manifests is read-only. Nothing is published or written back unless a future, separately designed operation is explicitly confirmed.
 6. **Future-proof controls:** inspector controls are represented as typed metadata, including nested groups, repeaters, responsive values, conditions, and defaults.
 
-Run automated tests on Windows with `dotnet test tests/LyraStudio.Tests/LyraStudio.Tests.csproj --configuration Release`.\n\nSee [docs/architecture.md](docs/architecture.md), [ROADMAP.md](ROADMAP.md), and [docs/provider-manifest-v1.md](docs/provider-manifest-v1.md).
+See [docs/architecture.md](docs/architecture.md), [ROADMAP.md](ROADMAP.md), and [docs/provider-manifest-v1.md](docs/provider-manifest-v1.md).
