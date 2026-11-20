@@ -56,6 +56,7 @@ public partial class MainWindow : Window
         try
         {
             var capabilities = await _connectionProbe.CheckAsync(_profile.SiteUrl);
+            ShowWelcomePreview();
             ConnectionDot.Fill = new SolidColorBrush(Color.FromRgb(37, 170, 112));
             ConnectionLabel.Text = "REST index inspected";
             StatusText.Text = $"Read-only WordPress discovery · {capabilities.DiscoveredRouteCount} routes";

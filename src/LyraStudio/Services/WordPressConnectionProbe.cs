@@ -41,16 +41,9 @@ public sealed class WordPressConnectionProbe
         {
             using var request = new HttpRequestMessage(HttpMethod.Head, siteUri);
             using var response = await Client.SendAsync(request, cancellationToken);
-            if (response.Headers.TryGetValues("Link", out var values))
-            {
-                foreach (var value in values)
-                {
-                    var match = RestApiLinkPattern.Match(value);
-                    if (match.Success &&
-                        Uri.TryCreate(match.Groups["url"].Value, UriKind.Absolute, out var discovered))
-                        return discovered;
-                }
-            }
+            if (response.Headers.TryGetValues("Link", out var values) &&
+                TryParseRestApiLinkHeader(values) is Uri discovered)
+                return discovered;
         }
         catch (HttpRequestException)
         {
@@ -62,6 +55,20 @@ public sealed class WordPressConnectionProbe
         }
 
         return BuildFallbackRestApiRoot(siteUri);
+    }
+
+    public static Uri? TryParseRestApiLinkHeader(IEnumerable<string> linkHeaderValues)
+    {
+        foreach (var value in linkHeaderValues)
+        {
+            foreach (Match match in RestApiLinkPattern.Matches(value))
+            {
+                if (Uri.TryCreate(match.Groups["url"].Value, UriKind.Absolute, out var discovered))
+                    return discovered;
+            }
+        }
+
+        return null;
     }
 
     public static Uri BuildFallbackRestApiRoot(Uri siteUri)

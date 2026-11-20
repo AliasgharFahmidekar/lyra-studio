@@ -78,6 +78,30 @@ public sealed class WordPressRestIndexParserTests
     }
 
     [Fact]
+    public void DiscoversRestRootFromWordPressLinkHeader()
+    {
+        var result = WordPressConnectionProbe.TryParseRestApiLinkHeader(
+        [
+            "<https://example.test/wp-json/>; rel=\"https://api.w.org/\"",
+            "<https://example.test/wp-json/wp/v2/pages>; rel=\"alternate\""
+        ]);
+
+        Assert.Equal("https://example.test/wp-json/", result?.ToString());
+    }
+
+    [Fact]
+    public void IgnoresLinkHeadersWithoutWordPressRestRelation()
+    {
+        var result = WordPressConnectionProbe.TryParseRestApiLinkHeader(
+        [
+            "<https://example.test/wp-json/>; rel=\"alternate\"",
+            "<https://example.test/feed/>; rel=\"https://api.w.org/feed\""
+        ]);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
     public void RejectsMalformedRestIndex()
     {
         Assert.Throws<System.Text.Json.JsonException>(() =>
