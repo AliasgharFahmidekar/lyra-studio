@@ -150,7 +150,7 @@ public sealed class ProviderPackageImporter
             }
             else
             {
-                warnings.Add("No Lyra Studio provider manifest or compatible source adapter was found. The package is shown as a generic file inventory.");
+                warnings.Add("No Lyra Studio provider manifest or compatible provider adapter was found. The package is shown as a generic file inventory.");
             }
         }
 
