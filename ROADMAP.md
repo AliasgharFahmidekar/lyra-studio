@@ -55,18 +55,18 @@ This roadmap is the source of truth for release scope. Progress is recalculated 
 
 **Artifact note:** CI runs #64 and #65 compiled the installer successfully, but GitHub refused the final artifact upload because the Actions storage quota was full. The build/test/publish/installer-compile steps passed; this is an artifact-storage limitation, not a source compile failure.
 
-### v0.5.0 — Preview-first source adapter · 0% · Current priority
-- [ ] Finalize the provider adapter contract and local adapter registry
-- [ ] Read Elementor-compatible widget registries and discover additional widget classes from source folders
-- [ ] Discover a variable number of widgets without a fixed catalog
-- [ ] Extract supported control definitions, labels, defaults, options, conditions, responsive flags and repeater children
-- [ ] Parse supported Lyra Page Builder PHP/JSON recipes into container/widget structures
-- [ ] Generate native local previews for Lyra Core's known widgets
-- [ ] Generate local recipe/page previews from the parsed recipe structure
-- [ ] Load package-local stylesheets, fonts, icons and image assets with external-resource restrictions
-- [ ] Provide a structural settings preview and support diagnostics for widgets without a native renderer
+### v0.5.0 — Preview-first source adapter · 80% · Active
+- [x] Define the initial provider adapter contract and local adapter registry
+- [x] Read Elementor-compatible widget registries and discover additional widget classes from source folders
+- [x] Discover a variable number of widgets without a fixed catalog
+- [x] Extract supported control definitions, labels, defaults, options, simple conditions, responsive flags and repeater children
+- [x] Parse the supported static Lyra Page Builder PHP recipe expressions into container/widget structures
+- [x] Add native local renderer mappings for the five known Lyra Core 0.1.2 widget IDs
+- [x] Generate local recipe previews from supported parsed container/widget structures
+- [x] Load package-local CSS, fonts, bounded images and safe SVG symbols with external-resource restrictions
+- [x] Provide an honest structural settings preview when no native visual renderer exists
 - [ ] Add fixtures/tests based on Lyra Core 0.1.2 and a second differently sized Elementor-compatible plugin
-- [ ] Verify the new adapter and preview flow in Windows CI
+- [ ] Add exact Lyra Core 0.1.2 regression coverage for all five widgets and all three shipped recipes
 
 ### v0.6.0 — General provider SDK and broader adapters · 0%
 - [ ] Version the provider adapter SDK and capability negotiation
@@ -102,30 +102,33 @@ This roadmap is the source of truth for release scope. Progress is recalculated 
 
 Fixed release weights: v0.1.0 = 10%, v0.2.0 = 20%, v0.3.0 = 25%, v0.4.0 = 8%, v0.5.0 = 15%, v0.6.0 = 10%, v0.7.0 = 6%, v0.8.0 = 3%, v1.0.0 = 3%.
 
-Verified progress after Windows CI runs #64/#65 (source commit 502176e314a6fbd6db7633abbb60d84afe2f3f7f):
+Verified progress after Windows CI runs #72/#73 (source commit f22f9159a23db5c9f661f1107c9e639a123955fe):
 - v0.1.0: 100%
 - v0.2.0: 100%
 - v0.3.0: 100%
 - v0.4.0: 100%
-- v0.5.0: 0% (adapter/preview source is in active development and awaits a new CI run)
+- v0.5.0: 80% (adapter, dynamic discovery, control parsing, recipe previews, native renderer mappings and CI verification are implemented; exact-package and second-provider regression fixtures remain)
 - v0.6.0: 0%
 - v0.7.0: 0%
 - v0.8.0: 0%
 - v1.0.0: 0%
 
-Weighted total: **63%** (10% + 20% + 25% + 8%). The immediate next goal is the preview-first adapter milestone; visual page editing and project persistence intentionally remain later.
+Weighted total: **75%** (10% + 20% + 25% + 8% + 12% from v0.5.0). The immediate next goal is to strengthen exact-package and cross-provider preview regression coverage. Visual page editing and project persistence intentionally remain later.
 
-## Latest verified CI before the preview-first adapter
+## Latest verified preview-first CI
 
 - PR: #1 (Draft), branch work/studio-foundation, base main (not merged)
-- Source commit: 502176e314a6fbd6db7633abbb60d84afe2f3f7f
-- CI run #65: https://github.com/AliasgharFahmidekar/lyra-studio/actions/runs/44946576702
-- Build: success
-- Automated tests: success
+- Source commit: f22f9159a23db5c9f661f1107c9e639a123955fe
+- CI push run #72: https://github.com/AliasgharFahmidekar/lyra-studio/actions/runs/44949888805 — success
+- CI pull-request run #73: https://github.com/AliasgharFahmidekar/lyra-studio/actions/runs/44949895035 — success
+- Windows build: success
+- Automated tests: 30 passed, 0 failed
 - Self-contained Windows publish: success
 - Offline WebView2 download and Authenticode validation: success
 - Inno Setup compilation: success
-- Artifact upload: blocked by GitHub Actions storage quota; no new installer artifact was created by this run
+- Artifact upload: blocked by GitHub Actions storage quota; the run logs report that no new artifact could be stored. Build and installer compilation still passed because the quota-limited upload is reported separately.
+
+The regression tests currently use a synthetic, two-widget Elementor-compatible package fixture with a Lyra widget and recipe expression. They do not yet run the exact uploaded Lyra Core 0.1.2 ZIP as a committed automated fixture. That exact-package check and broader renderer coverage are the remaining v0.5 tasks.
 
 The separate clean-machine installation/run test remains open.
 
