@@ -10,7 +10,7 @@ namespace LyraStudio;
 public partial class MainWindow : Window
 {
     private readonly ProviderManifestLoader _manifestLoader = new();
-    private readonly ProviderPackageImporter _packageImporter = new(_manifestLoader);
+    private readonly ProviderPackageImporter _packageImporter;
     private readonly DynamicInspectorBuilder _inspectorBuilder = new();
     private readonly LocalWidgetPreviewBuilder _previewBuilder = new();
     private readonly ObservableCollection<WidgetDescriptor> _widgets = new();
@@ -27,6 +27,7 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
+        _packageImporter = new ProviderPackageImporter(_manifestLoader);
         InitializeComponent();
         WidgetList.ItemsSource = _widgets;
         RecipeList.ItemsSource = _recipes;

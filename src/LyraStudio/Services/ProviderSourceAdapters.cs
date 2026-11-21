@@ -1,3 +1,4 @@
+using System.IO;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using LyraStudio.Models;
@@ -231,7 +232,7 @@ public sealed class ElementorPhpSourceAdapter : IProviderSourceAdapter
                 ProviderName = providerName,
                 ProviderVersion = providerVersion,
                 Widgets = widgets,
-                Recipes = recipes
+                Recipes = recipes.ToList()
             },
             warnings);
     }

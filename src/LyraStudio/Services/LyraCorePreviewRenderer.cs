@@ -404,7 +404,7 @@ public sealed class LyraCorePreviewRenderer
     private static string SafeClassList(string? classes)
     {
         if (string.IsNullOrWhiteSpace(classes)) return "";
-        return string.Join(" ", classes.Split(' ', StringSplitOptions.RemoveEmptyEntries).Where(SafeCssToken.IsMatch));
+        return string.Join(" ", classes.Split(' ', StringSplitOptions.RemoveEmptyEntries).Where(token => SafeCssToken.IsMatch(token)));
     }
 
     private static string DisplayValue(JsonElement value) => value.ValueKind switch
