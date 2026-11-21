@@ -10,13 +10,16 @@ namespace LyraStudio;
 public partial class MainWindow : Window
 {
     private readonly ProviderManifestLoader _manifestLoader = new();
+    private readonly ProviderPackageImporter _packageImporter = new(_manifestLoader);
     private readonly DynamicInspectorBuilder _inspectorBuilder = new();
     private readonly LocalWidgetPreviewBuilder _previewBuilder = new();
     private readonly ObservableCollection<WidgetDescriptor> _widgets = new();
     private readonly ObservableCollection<RecipeDescriptor> _recipes = new();
+    private readonly ObservableCollection<PackageFileDescriptor> _packageFiles = new();
 
     private ProviderManifest? _manifest;
-    private string? _manifestPath;
+    private ProviderPackageInspection? _packageInspection;
+    private string? _packagePath;
     private Dictionary<string, object?> _currentSettings = new();
     private WidgetDescriptor? _selectedWidget;
     private bool _webViewReady;
@@ -27,6 +30,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         WidgetList.ItemsSource = _widgets;
         RecipeList.ItemsSource = _recipes;
+        PackageFilesList.ItemsSource = _packageFiles;
         Loaded += async (_, _) =>
         {
             SetOfflineStatus();
@@ -76,69 +80,111 @@ public partial class MainWindow : Window
         RecipeInspector.Visibility = Visibility.Collapsed;
     }
 
-    private async void ImportManifest_Click(object sender, RoutedEventArgs e)
+    private async void ImportPackage_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new OpenFileDialog
         {
-            Title = "Import local provider manifest",
-            Filter = "Lyra Studio manifest (*.json)|*.json|JSON files (*.json)|*.json|All files (*.*)|*.*",
+            Title = "Import local plugin/provider package",
+            Filter = "ZIP packages (*.zip)|*.zip|Provider manifests (*.json)|*.json|All files (*.*)|*.*",
             CheckFileExists = true,
             Multiselect = false
         };
 
         if (dialog.ShowDialog(this) == true)
-            await LoadManifestAsync(dialog.FileName);
+            await LoadPackageAsync(dialog.FileName);
     }
 
-    private async Task LoadManifestAsync(string path)
+    private async void ImportFolder_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFolderDialog
+        {
+            Title = "Import local plugin/provider source folder"
+        };
+
+        if (dialog.ShowDialog(this) == true)
+            await LoadPackageAsync(dialog.FolderName);
+    }
+
+    private async Task LoadPackageAsync(string path)
     {
         try
         {
-            var manifest = await _manifestLoader.LoadAsync(path);
-            _manifest = manifest;
-            _manifestPath = path;
+            var inspection = await _packageImporter.InspectAsync(path);
+            _packageInspection = inspection;
+            _packagePath = path;
+            _packageFiles.Clear();
+            foreach (var file in inspection.Files)
+                _packageFiles.Add(file);
 
-            _widgets.Clear();
-            foreach (var widget in manifest.Widgets) _widgets.Add(widget);
-            _recipes.Clear();
-            foreach (var recipe in manifest.Recipes) _recipes.Add(recipe);
-
-            ConnectionLabel.Text = "Local manifest loaded";
-            ConnectionDot.Fill = new SolidColorBrush(Color.FromRgb(37, 170, 112));
-            StatusText.Text = $"{manifest.ProviderName} {manifest.ProviderVersion} · {_widgets.Count} widgets · {_recipes.Count} recipes · local file";
-            PageSubtitle.Text = $"Local provider: {manifest.ProviderName} · Manifest v{manifest.ManifestVersion}";
-
-            if (_widgets.Count > 0)
-                ShowWidgetCatalog(selectFirst: true);
-            else if (_recipes.Count > 0)
-                ShowRecipeCatalog(selectFirst: true);
+            if (inspection.Manifest is not null)
+            {
+                LoadManifestIntoWorkspace(inspection.Manifest);
+                var warningSuffix = inspection.Warnings.Count == 0
+                    ? ""
+                    : $" · {inspection.Warnings.Count} scan warning(s)";
+                StatusText.Text =
+                    $"{inspection.PackageName} · {inspection.FileCount} files scanned · " +
+                    $"{inspection.WidgetCount} widgets · {inspection.RecipeCount} recipes{warningSuffix}";
+            }
             else
             {
-                EmptyTitle.Text = "Manifest loaded — no catalog entries";
-                EmptyDescription.Text = "The local provider manifest is valid, but it contains no widgets or recipes yet.";
-                ShowWelcomePreview();
+                _manifest = null;
+                _widgets.Clear();
+                _recipes.Clear();
+                ShowPackageCatalog();
+                StatusText.Text = $"{inspection.PackageName} · {inspection.FileCount} files scanned · no provider manifest";
             }
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, ex.Message, "Manifest import failed", MessageBoxButton.OK, MessageBoxImage.Warning);
-            StatusText.Text = "Manifest import failed · " + ex.Message;
+            MessageBox.Show(this, ex.Message, "Package import failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+            StatusText.Text = "Package import failed · " + ex.Message;
+        }
+    }
+
+    private void LoadManifestIntoWorkspace(ProviderManifest manifest)
+    {
+        _manifest = manifest;
+        _widgets.Clear();
+        foreach (var widget in manifest.Widgets)
+            _widgets.Add(widget);
+        _recipes.Clear();
+        foreach (var recipe in manifest.Recipes)
+            _recipes.Add(recipe);
+
+        ConnectionLabel.Text = "Local provider loaded";
+        ConnectionDot.Fill = new SolidColorBrush(Color.FromRgb(37, 170, 112));
+        PageSubtitle.Text = $"Local provider: {manifest.ProviderName} · Manifest v{manifest.ManifestVersion}";
+
+        WidgetList.SelectedIndex = -1;
+        RecipeList.SelectedIndex = -1;
+        if (_widgets.Count > 0)
+            ShowWidgetCatalog(selectFirst: true);
+        else if (_recipes.Count > 0)
+            ShowRecipeCatalog(selectFirst: true);
+        else
+        {
+            EmptyTitle.Text = "Provider loaded — no catalog entries";
+            EmptyDescription.Text = "The provider manifest is valid, but it contains no widgets or recipes yet.";
+            ShowWelcomePreview();
         }
     }
 
     private void Widgets_Click(object sender, RoutedEventArgs e) => ShowWidgetCatalog(selectFirst: false);
     private void Recipes_Click(object sender, RoutedEventArgs e) => ShowRecipeCatalog(selectFirst: false);
+    private void Packages_Click(object sender, RoutedEventArgs e) => ShowPackageCatalog();
 
     private void ShowWidgetCatalog(bool selectFirst)
     {
         PageTitle.Text = "Widget Library";
         PageSubtitle.Text = _manifest is null
-            ? "Import a local provider manifest to discover widgets."
+            ? "Import a local provider package or manifest to discover widgets."
             : $"Local widgets from {_manifest.ProviderName}";
         CatalogListTitle.Text = "WIDGETS";
         EmptyTitle.Text = "No widget catalog loaded";
-        EmptyDescription.Text = "Import a provider manifest stored on this computer. No server connection is required.";
+        EmptyDescription.Text = "Import a provider package or manifest stored on this computer. No server connection is required.";
         RecipeList.Visibility = Visibility.Collapsed;
+        PackageFilesList.Visibility = Visibility.Collapsed;
         WidgetList.Visibility = Visibility.Visible;
 
         if (_widgets.Count == 0)
@@ -159,7 +205,7 @@ public partial class MainWindow : Window
             SelectionInfo.Visibility = Visibility.Visible;
             PreviewTitle.Text = "Select a widget";
             PreviewSubtitle.Text = $"{_widgets.Count} widgets discovered locally";
-            PreviewMessage.Text = "Choose a widget. Its control panel and local preview are generated from the provider manifest.";
+            PreviewMessage.Text = "Choose a widget. Its control panel and local preview are generated from provider metadata.";
         }
     }
 
@@ -167,12 +213,13 @@ public partial class MainWindow : Window
     {
         PageTitle.Text = "Recipe Studio";
         PageSubtitle.Text = _manifest is null
-            ? "Import a local provider manifest to discover recipes."
+            ? "Import a local provider package or manifest to discover recipes."
             : $"Local recipes from {_manifest.ProviderName}";
         CatalogListTitle.Text = "RECIPES";
         EmptyTitle.Text = "No recipe catalog loaded";
-        EmptyDescription.Text = "Import a provider manifest containing recipe descriptors. Recipe formats remain provider-specific.";
+        EmptyDescription.Text = "Import a provider package containing recipe descriptors. Recipe formats remain provider-specific.";
         WidgetList.Visibility = Visibility.Collapsed;
+        PackageFilesList.Visibility = Visibility.Collapsed;
         RecipeList.Visibility = Visibility.Visible;
 
         if (_recipes.Count == 0)
@@ -193,8 +240,51 @@ public partial class MainWindow : Window
             SelectionInfo.Visibility = Visibility.Visible;
             PreviewTitle.Text = "Select a recipe";
             PreviewSubtitle.Text = $"{_recipes.Count} recipes discovered locally";
-            PreviewMessage.Text = "Recipe structure editing and local project persistence are scheduled for upcoming releases.";
+            PreviewMessage.Text = "Recipe structure parsing and editing are scheduled for a later document-model milestone.";
         }
+    }
+
+    private void ShowPackageCatalog()
+    {
+        PageTitle.Text = "Package Explorer";
+        PageSubtitle.Text = _packageInspection is null
+            ? "Import a plugin ZIP or source folder to inspect its local files."
+            : $"{_packageInspection.PackageName} · {_packageInspection.FileCount} files · read-only scan";
+        CatalogListTitle.Text = "PACKAGE FILES";
+        WidgetList.Visibility = Visibility.Collapsed;
+        RecipeList.Visibility = Visibility.Collapsed;
+        PackageFilesList.Visibility = Visibility.Visible;
+
+        if (_packageInspection is null)
+        {
+            ShowWelcomePreview();
+            return;
+        }
+
+        EmptyState.Visibility = Visibility.Collapsed;
+        CatalogState.Visibility = Visibility.Visible;
+        PreviewScroll.Visibility = Visibility.Collapsed;
+        SelectionInfo.Visibility = Visibility.Visible;
+        InspectorEmptyState.Visibility = Visibility.Visible;
+        WidgetInspector.Visibility = Visibility.Collapsed;
+        RecipeInspector.Visibility = Visibility.Collapsed;
+        _selectedWidget = null;
+
+        var summary = string.Join(" · ", _packageInspection.Files
+            .GroupBy(file => file.Category)
+            .OrderBy(group => group.Key)
+            .Select(group => $"{group.Key}: {group.Count()}"));
+
+        PreviewTitle.Text = _packageInspection.HasProviderManifest
+            ? "Provider package inspected"
+            : "No provider manifest found";
+        PreviewSubtitle.Text = $"{_packageInspection.FileCount} files scanned · {_packageInspection.WidgetCount} widgets · {_packageInspection.RecipeCount} recipes";
+        PreviewMessage.Text = _packageInspection.HasProviderManifest
+            ? $"The package manifest was found at '{_packageInspection.ManifestEntryPath}'.\n\n{summary}\n\nWidget and recipe catalogs are available in their workspace sections."
+            : $"The package was scanned without extracting or executing its files.\n\n{summary}\n\nThis is a generic file inventory, not semantic widget discovery. To expose native widgets and recipes, the package needs a Lyra Studio manifest or a provider-specific discovery adapter.";
+        StatusText.Text = _packageInspection.Warnings.Count == 0
+            ? "Read-only package inventory"
+            : string.Join(" · ", _packageInspection.Warnings);
     }
 
     private void WidgetList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -239,7 +329,7 @@ public partial class MainWindow : Window
         SelectionInfo.Visibility = Visibility.Visible;
         PreviewTitle.Text = recipe.Name;
         PreviewSubtitle.Text = recipe.Description ?? recipe.Id;
-        PreviewMessage.Text = "Recipe metadata is loaded from the local manifest. No website is contacted and no remote content is changed.";
+        PreviewMessage.Text = "Recipe metadata is loaded from the local provider package. Page/template parsing and editing are a later milestone.";
 
         InspectorEmptyState.Visibility = Visibility.Collapsed;
         WidgetInspector.Visibility = Visibility.Collapsed;
@@ -248,6 +338,23 @@ public partial class MainWindow : Window
         RecipeInspectorDescription.Text = recipe.Description ?? recipe.Id;
         RecipeInspectorFormat.Text = $"ID: {recipe.Id}\nFormat: {recipe.Format}\nFormat version: {recipe.FormatVersion ?? "Not specified"}";
         StatusText.Text = $"Local recipe · {recipe.Name} · {recipe.Format}";
+    }
+
+    private void PackageFilesList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (PackageFilesList.SelectedItem is not PackageFileDescriptor file || _packageInspection is null)
+            return;
+
+        _selectedWidget = null;
+        PreviewScroll.Visibility = Visibility.Collapsed;
+        SelectionInfo.Visibility = Visibility.Visible;
+        PreviewTitle.Text = file.RelativePath;
+        PreviewSubtitle.Text = $"{file.Category} · {file.SizeBytes:N0} bytes";
+        PreviewMessage.Text = "This item is listed as inert package data. Lyra Studio has not opened, extracted, or executed its source content.";
+        InspectorEmptyState.Visibility = Visibility.Visible;
+        WidgetInspector.Visibility = Visibility.Collapsed;
+        RecipeInspector.Visibility = Visibility.Collapsed;
+        StatusText.Text = $"Package file · {file.Category} · {file.RelativePath}";
     }
 
     private void UpdateSettingsJson()
@@ -300,12 +407,12 @@ public partial class MainWindow : Window
 
     private async void Refresh_Click(object sender, RoutedEventArgs e)
     {
-        if (!string.IsNullOrWhiteSpace(_manifestPath))
+        if (!string.IsNullOrWhiteSpace(_packagePath))
         {
-            await LoadManifestAsync(_manifestPath);
+            await LoadPackageAsync(_packagePath);
             return;
         }
 
-        StatusText.Text = "No local manifest loaded. Import a provider manifest to refresh the catalog.";
+        StatusText.Text = "No local package loaded. Import a plugin ZIP, source folder, or provider manifest to refresh.";
     }
 }

@@ -6,11 +6,13 @@ using LyraStudio.Models;
 namespace LyraStudio.Services;
 
 /// <summary>
-/// Loads and validates a provider manifest from disk. This is deliberately a
-/// read-only interchange path; it does not install code or modify WordPress.
+/// Loads and validates a provider manifest from a local file or package stream.
+/// Importing metadata never executes provider code.
 /// </summary>
 public sealed class ProviderManifestLoader
 {
+    public const int MaximumManifestBytes = 8 * 1024 * 1024;
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
@@ -25,12 +27,44 @@ public sealed class ProviderManifestLoader
         if (!File.Exists(path))
             throw new FileNotFoundException("Provider manifest file was not found.", path);
 
+        var fileInfo = new FileInfo(path);
+        if (fileInfo.Length > MaximumManifestBytes)
+            throw new InvalidDataException($"The provider manifest exceeds the {MaximumManifestBytes:N0}-byte limit.");
+
         await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        return await LoadAsync(stream, cancellationToken);
+    }
+
+    /// <summary>
+    /// Reads a bounded manifest from a stream without taking ownership of the stream.
+    /// This supports reading metadata directly from a ZIP entry without extracting files.
+    /// </summary>
+    public async Task<ProviderManifest> LoadAsync(Stream stream, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        if (!stream.CanRead)
+            throw new ArgumentException("The manifest stream must be readable.", nameof(stream));
+
+        await using var buffer = new MemoryStream();
+        var chunk = new byte[81920];
+        int read;
+        while ((read = await stream.ReadAsync(chunk.AsMemory(0, chunk.Length), cancellationToken)) > 0)
+        {
+            if (buffer.Length + read > MaximumManifestBytes)
+                throw new InvalidDataException($"The provider manifest exceeds the {MaximumManifestBytes:N0}-byte limit.");
+
+            await buffer.WriteAsync(chunk.AsMemory(0, read), cancellationToken);
+        }
+
+        if (buffer.Length == 0)
+            throw new InvalidDataException("The manifest file is empty.");
+
+        buffer.Position = 0;
         ProviderManifest manifest;
         try
         {
             manifest = await JsonSerializer.DeserializeAsync<ProviderManifest>(
-                stream, JsonOptions, cancellationToken)
+                buffer, JsonOptions, cancellationToken)
                 ?? throw new InvalidDataException("The manifest file is empty.");
         }
         catch (JsonException ex)
@@ -81,7 +115,6 @@ public sealed class ProviderManifestLoader
         if (preview.Html.Length > 262144 || preview.Css.Length > 131072)
             throw new InvalidDataException("A local widget preview template exceeds the supported size limit.");
 
-        // Local previews are static and offline: no executable or remote markup.
         if (Regex.IsMatch(preview.Html,
             @"<\s*(script|iframe|object|embed|form)\b|\son[a-z]+\s*=|javascript\s*:|https?://|<\s*link\b",
             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))

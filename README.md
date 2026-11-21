@@ -1,13 +1,15 @@
 # Lyra Studio
 
-Lyra Studio is a Windows desktop workspace for local widget editing, recipes, and responsive previews. Its normal workflow is entirely on the computer.
+Lyra Studio is a local-first Windows desktop workspace for importing provider/plugin packages, discovering supported widget and recipe catalogs, editing widget settings, and previewing supported components locally.
 
 ## Product boundary
 
-- No WordPress installation, server, website login, or Lyra Studio Bridge is required to open the app, import a provider manifest, edit widget settings, or use a local preview template.
-- The application does not contact WordPress during startup or normal editing.
-- Provider catalogs are imported from local JSON files.
-- Preview templates are static HTML/CSS supplied by the provider manifest. Lyra Studio renders them locally in its embedded preview surface. This is a provider-supplied local representation, not a claim that PHP/Elementor frontend rendering is running locally.
+- No WordPress installation, server, website login, or Lyra Studio Bridge is required to open the app or inspect local files.
+- The application does not contact a website during startup or normal editing.
+- Provider/plugin packages are imported from local ZIP archives or source folders. Standalone Provider Manifest v1 JSON files remain supported.
+- A package can expose its catalog through lyra-studio.provider.json. See docs/provider-package-v1.md.
+- Package source files are treated as inert data. Lyra Studio does not execute PHP, JavaScript, binaries, or other provider code.
+- Preview templates are static HTML/CSS supplied by the provider manifest. They are rendered locally and are not claimed to be the real PHP/Elementor frontend output.
 - Future site publishing/export can be a separate, explicit feature. It is not required for the desktop workspace.
 
 ## Install on Windows
@@ -23,20 +25,21 @@ Developers building from source need the .NET 8 SDK. That is a development prere
 
 ## Local workflow
 
-1. Open Lyra Studio. No server connection is shown or required.
-2. Select Import Manifest and choose a provider JSON manifest on the computer.
-3. Select a widget. Lyra Studio generates the controls from the provider schema.
-4. Edit scalar settings, groups, conditional fields, and repeater items. The nested JSON can be copied from the Inspector.
-5. The preview updates locally when the settings change. Use Desktop, Tablet, and Mobile to change the preview viewport.
-6. Widgets without a local preview template remain editable; the preview explains that the provider has not supplied a renderer for that widget yet.
+1. Import a plugin/provider ZIP, a source folder, or a standalone provider manifest.
+2. Lyra Studio performs a bounded, read-only scan and reports the package file inventory.
+3. When a compatible provider manifest is present, Studio loads its widget and recipe descriptors.
+4. Select a widget. The Inspector generates controls from the provider schema.
+5. Edit scalar settings, groups, conditional fields, and repeater items. The nested JSON can be copied from the Inspector.
+6. The preview updates locally when a supported widget is selected. Use Desktop, Tablet, and Mobile to change the preview viewport.
+7. Packages without a provider manifest are still browsable as a generic inventory. A provider-specific adapter is required for semantic source discovery.
 
-## Local preview template contract
+## Provider package convention
 
-A widget may include a preview object with static html and css fields. HTML placeholders use {{setting.path}}; values are HTML-encoded before insertion. {{name}} and {{id}} expose the widget name and ID.
+Providers can include lyra-studio.provider.json in their ZIP or source folder. It follows the current Provider Manifest v1 schema. The manifest declares stable provider identity, widgets, control schemas, optional local widget previews, and recipe descriptors.
 
-The preview template cannot execute scripts or load remote content. The manifest loader rejects script/frame elements, event handlers, JavaScript URLs, remote URLs, CSS imports, and oversized templates. The WebView2 document also uses a restrictive Content Security Policy.
+A generic source scan can classify source files, assets, styles and likely templates/content files. It cannot safely infer every provider's control schemas or reproduce arbitrary plugin rendering. Automatic source discovery belongs in provider-specific adapters.
 
-See docs/provider-manifest-v1.md for the contract, docs/architecture.md for boundaries, and ROADMAP.md for progress.
+A plugin archive is not necessarily a site-content export. User-created pages and templates stored in an external site's database may need to be exported separately.
 
 ## Build and test from source
 
@@ -48,6 +51,8 @@ The CI workflow tests the app, publishes the self-contained Windows build, downl
 
 ## Current limitations
 
+- Widget and recipe semantic discovery currently requires a compatible provider manifest. Native source-language adapters are the next planned milestone.
+- Recipe descriptors are metadata; full page/template/section/widget tree parsing and editing are not implemented yet.
 - A provider must supply a static local preview template for each widget whose appearance should be shown. The generic settings editor remains usable without one.
-- The local preview shows the provider-authored template and is not the real Elementor/PHP frontend output.
-- Full recipe structure editing, saved local projects, undo/redo, media management, and export workflows remain on the roadmap.
+- The local preview is a provider-authored representation, not the real Elementor/PHP frontend.
+- Saved local projects, undo/redo, media management, visual page editing, and round-trip export remain on the roadmap.
