@@ -63,7 +63,8 @@ The Windows CI workflow builds/tests the app, publishes the self-contained Windo
 ## Current limitations
 
 - The first adapter parses a safe, static subset of Elementor-compatible PHP and Lyra Page Builder recipe expressions. Dynamic PHP expressions are not evaluated.
-- Native visual preview is implemented only for the known Lyra Core widget set. Other discovered widgets get an honest structural preview until a renderer is available.
+- Native visual preview has renderer mappings for the five known Lyra Core widget IDs. Other discovered widgets get an honest structural preview until a provider-specific renderer is available.
+- The current 30-test CI suite uses a synthetic two-widget plugin fixture; automated end-to-end regression against the exact Lyra Core 0.1.2 ZIP and all three shipped recipes is still being added.
 - CSS and assets are imported from the package under strict limits. Remote resources are not loaded.
 - Responsive overrides can be discovered, but not every provider-specific responsive behavior is reproduced yet.
 - Full neutral page editing, persistent local projects, undo/redo, media management, and round-trip export are later milestones.
