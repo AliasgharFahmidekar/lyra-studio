@@ -1,20 +1,49 @@
 # Lyra Studio
 
-Lyra Studio is a local-first Windows desktop workspace for importing provider/plugin packages, discovering supported widget and recipe catalogs, editing widget settings, and previewing supported components locally.
+Lyra Studio is a local-first Windows desktop workspace for importing plugin/provider packages, discovering widgets and ready-made recipes, and previewing them locally. **The first development priority is visual preview; a complete visual editor, project management, and export come later.**
 
 ## Product boundary
 
-- No WordPress installation, server, website login, or Lyra Studio Bridge is required to open the app or inspect local files.
+- No WordPress installation, server, website login, database, or Lyra Studio Bridge is required to import a package or generate a local preview.
 - The application does not contact a website during startup or normal editing.
-- Provider/plugin packages are imported from local ZIP archives or source folders. Standalone Provider Manifest v1 JSON files remain supported.
+- Plugin/provider packages are imported from local ZIP archives or source folders. Standalone Provider Manifest v1 JSON files remain supported.
 - A package can expose its catalog through lyra-studio.provider.json. See docs/provider-package-v1.md.
+- Built-in source adapters can also read supported plugin source patterns. The first adapter reads Elementor-compatible PHP widget definitions and Lyra Page Builder recipes.
 - Package source files are treated as inert data. Lyra Studio does not execute PHP, JavaScript, binaries, or other provider code.
-- Preview templates are static HTML/CSS supplied by the provider manifest. They are rendered locally and are not claimed to be the real PHP/Elementor frontend output.
-- Future site publishing/export can be a separate, explicit feature. It is not required for the desktop workspace.
+- Local previews are generated from safe, provider-aware renderers. They are not claimed to be the real PHP/Elementor frontend output.
+
+## First source adapter: Lyra Core / Elementor-compatible PHP
+
+The preview-first adapter can:
+
+- Read a static widget registry when a plugin provides one, and scan the plugin's widget source folders for additional compatible widget classes.
+- Discover a variable number of widgets; the catalog is not hardcoded to the five widgets in Lyra Core 0.1.2.
+- Read static get_name(), get_title(), and register_controls() declarations.
+- Extract supported Elementor control types, defaults, options, simple conditions, responsive flags, and repeater sub-fields.
+- Read PHP recipe arrays that use Lyra Page Builder container() and widget() calls.
+- Generate local previews for the five known Lyra Core widget types and the three recipes shipped in Lyra Core 0.1.2.
+- Load package-local CSS, fonts, image assets, and a safe SVG symbol sprite into the preview document.
+
+Other Elementor widgets discovered by the adapter still appear in the catalog and Inspector. When there is no matching local visual renderer, Studio shows a structural settings preview and explains that a provider-specific renderer is not available. It does not execute a widget's PHP render() method or its JavaScript content_template().
+
+## Local workflow
+
+1. Import a plugin/provider ZIP, a source folder, or a standalone provider manifest.
+2. Lyra Studio performs a bounded, read-only scan. ZIPs are inspected without extracting their contents.
+3. Studio loads a compatible manifest or invokes a registered static source adapter.
+4. Browse the discovered widgets and recipes.
+5. Select a widget or recipe to see its local preview. Use Desktop, Tablet, and Mobile to change the preview viewport.
+6. Edit supported widget control values in the Inspector; changes update the local preview when its renderer supports those settings.
+
+A generic source scan can classify files, but it cannot infer every framework's semantic model. For other plugin ecosystems, an adapter must translate their native declarations into the provider-neutral Studio contracts.
+
+## Recipes and saved site content
+
+A plugin package may include ready-made recipe/template files, as Lyra Core does. Pages and templates saved in an external site's database are different content: they may need to be exported separately as JSON, a kit, or another supported content package. Importing a plugin ZIP alone is not represented as importing every page stored by a website.
 
 ## Install on Windows
 
-Use the single LyraStudio-Setup.exe installer from the GitHub Actions artifact.
+Use the single LyraStudio-Setup.exe installer from the GitHub Actions artifact when an artifact is available.
 
 - The app is published as a self-contained win-x64 application. Users do not need to download or install .NET 8 separately.
 - The setup contains the Microsoft WebView2 Evergreen Standalone installer and installs it silently only when the runtime is missing.
@@ -23,36 +52,19 @@ Use the single LyraStudio-Setup.exe installer from the GitHub Actions artifact.
 
 Developers building from source need the .NET 8 SDK. That is a development prerequisite only, not an end-user installation requirement.
 
-## Local workflow
-
-1. Import a plugin/provider ZIP, a source folder, or a standalone provider manifest.
-2. Lyra Studio performs a bounded, read-only scan and reports the package file inventory.
-3. When a compatible provider manifest is present, Studio loads its widget and recipe descriptors.
-4. Select a widget. The Inspector generates controls from the provider schema.
-5. Edit scalar settings, groups, conditional fields, and repeater items. The nested JSON can be copied from the Inspector.
-6. The preview updates locally when a supported widget is selected. Use Desktop, Tablet, and Mobile to change the preview viewport.
-7. Packages without a provider manifest are still browsable as a generic inventory. A provider-specific adapter is required for semantic source discovery.
-
-## Provider package convention
-
-Providers can include lyra-studio.provider.json in their ZIP or source folder. It follows the current Provider Manifest v1 schema. The manifest declares stable provider identity, widgets, control schemas, optional local widget previews, and recipe descriptors.
-
-A generic source scan can classify source files, assets, styles and likely templates/content files. It cannot safely infer every provider's control schemas or reproduce arbitrary plugin rendering. Automatic source discovery belongs in provider-specific adapters.
-
-A plugin archive is not necessarily a site-content export. User-created pages and templates stored in an external site's database may need to be exported separately.
-
 ## Build and test from source
 
     dotnet restore
     dotnet test tests/LyraStudio.Tests/LyraStudio.Tests.csproj --configuration Release
     dotnet publish src/LyraStudio/LyraStudio.csproj --configuration Release -r win-x64 --self-contained true
 
-The CI workflow tests the app, publishes the self-contained Windows build, downloads the offline WebView2 installer, and creates the one-step Windows setup package.
+The Windows CI workflow builds/tests the app, publishes the self-contained Windows build, downloads the offline WebView2 installer, and compiles the Inno Setup package. Uploading the artifact can be temporarily blocked when the GitHub Actions storage quota is full.
 
 ## Current limitations
 
-- Widget and recipe semantic discovery currently requires a compatible provider manifest. Native source-language adapters are the next planned milestone.
-- Recipe descriptors are metadata; full page/template/section/widget tree parsing and editing are not implemented yet.
-- A provider must supply a static local preview template for each widget whose appearance should be shown. The generic settings editor remains usable without one.
-- The local preview is a provider-authored representation, not the real Elementor/PHP frontend.
-- Saved local projects, undo/redo, media management, visual page editing, and round-trip export remain on the roadmap.
+- The first adapter parses a safe, static subset of Elementor-compatible PHP and Lyra Page Builder recipe expressions. Dynamic PHP expressions are not evaluated.
+- Native visual preview is implemented only for the known Lyra Core widget set. Other discovered widgets get an honest structural preview until a renderer is available.
+- CSS and assets are imported from the package under strict limits. Remote resources are not loaded.
+- Responsive overrides can be discovered, but not every provider-specific responsive behavior is reproduced yet.
+- Full neutral page editing, persistent local projects, undo/redo, media management, and round-trip export are later milestones.
+- A separate clean Windows machine installation/run test is still required for final release QA.

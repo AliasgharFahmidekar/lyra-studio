@@ -8,6 +8,8 @@ public sealed record ProviderPackageInspection(
     IReadOnlyList<PackageFileDescriptor> Files,
     IReadOnlyList<string> Warnings)
 {
+    public ProviderPreviewAssets? PreviewAssets { get; init; }
+    public string? AdapterId { get; init; }
     public bool HasProviderManifest => Manifest is not null;
     public int FileCount => Files.Count;
     public int WidgetCount => Manifest?.Widgets.Count ?? 0;

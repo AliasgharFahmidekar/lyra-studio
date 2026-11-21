@@ -28,7 +28,7 @@ public sealed class ProviderPackageImporterTests
             Assert.True(result.HasProviderManifest);
             Assert.Equal("sample.provider", result.Manifest!.ProviderId);
             Assert.Single(result.Manifest.Widgets);
-            Assert.Equal("src/plugin.php", Assert.Single(result.Files.Where(x => x.Category == "Source")).RelativePath);
+            Assert.Equal("src/plugin.php", Assert.Single(result.Files, x => x.Category == "Source").RelativePath);
             Assert.Contains(result.Files, x => x.Category == "Asset");
             Assert.Contains(result.Files, x => x.Category == "Template");
         }

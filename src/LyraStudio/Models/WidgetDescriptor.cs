@@ -7,7 +7,11 @@ public sealed record WidgetDescriptor(
     string? Description = null,
     string? Version = null,
     IReadOnlyList<ControlDefinition>? Controls = null,
-    WidgetPreviewDefinition? Preview = null);
+    WidgetPreviewDefinition? Preview = null)
+{
+    /// <summary>Optional local renderer key selected by a provider source adapter.</summary>
+    public string? PreviewRendererId { get; init; }
+}
 
 /// <summary>
 /// Static, local HTML/CSS template supplied by a provider. Scripts and remote

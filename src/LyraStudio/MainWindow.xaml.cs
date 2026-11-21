@@ -10,7 +10,7 @@ namespace LyraStudio;
 public partial class MainWindow : Window
 {
     private readonly ProviderManifestLoader _manifestLoader = new();
-    private readonly ProviderPackageImporter _packageImporter;
+    private readonly ProviderPackageImporter _packageImporter = new(_manifestLoader);
     private readonly DynamicInspectorBuilder _inspectorBuilder = new();
     private readonly LocalWidgetPreviewBuilder _previewBuilder = new();
     private readonly ObservableCollection<WidgetDescriptor> _widgets = new();
@@ -27,7 +27,6 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
-        _packageImporter = new ProviderPackageImporter(_manifestLoader);
         InitializeComponent();
         WidgetList.ItemsSource = _widgets;
         RecipeList.ItemsSource = _recipes;
@@ -155,7 +154,9 @@ public partial class MainWindow : Window
 
         ConnectionLabel.Text = "Local provider loaded";
         ConnectionDot.Fill = new SolidColorBrush(Color.FromRgb(37, 170, 112));
-        PageSubtitle.Text = $"Local provider: {manifest.ProviderName} · Manifest v{manifest.ManifestVersion}";
+        PageSubtitle.Text = _packageInspection?.AdapterId is string adapterId
+            ? $"Local provider: {manifest.ProviderName} · {adapterId} · source discovered"
+            : $"Local provider: {manifest.ProviderName} · Manifest v{manifest.ManifestVersion}";
 
         WidgetList.SelectedIndex = -1;
         RecipeList.SelectedIndex = -1;
@@ -241,7 +242,7 @@ public partial class MainWindow : Window
             SelectionInfo.Visibility = Visibility.Visible;
             PreviewTitle.Text = "Select a recipe";
             PreviewSubtitle.Text = $"{_recipes.Count} recipes discovered locally";
-            PreviewMessage.Text = "Recipe structure parsing and editing are scheduled for a later document-model milestone.";
+            PreviewMessage.Text = "Choose a ready-made page or template to see its local preview. Full page editing comes later.";
         }
     }
 
@@ -266,23 +267,23 @@ public partial class MainWindow : Window
         CatalogState.Visibility = Visibility.Visible;
         PreviewScroll.Visibility = Visibility.Collapsed;
         SelectionInfo.Visibility = Visibility.Visible;
-        InspectorEmptyState.Visibility = Visibility.Visible;
-        WidgetInspector.Visibility = Visibility.Collapsed;
-        RecipeInspector.Visibility = Visibility.Collapsed;
-        _selectedWidget = null;
 
         var summary = string.Join(" · ", _packageInspection.Files
             .GroupBy(file => file.Category)
             .OrderBy(group => group.Key)
             .Select(group => $"{group.Key}: {group.Count()}"));
 
-        PreviewTitle.Text = _packageInspection.HasProviderManifest
-            ? "Provider package inspected"
-            : "No provider manifest found";
+        PreviewTitle.Text = _packageInspection.AdapterId is not null
+            ? "Source adapter discovered this package"
+            : _packageInspection.HasProviderManifest
+                ? "Provider manifest inspected"
+                : "No provider manifest or adapter found";
         PreviewSubtitle.Text = $"{_packageInspection.FileCount} files scanned · {_packageInspection.WidgetCount} widgets · {_packageInspection.RecipeCount} recipes";
-        PreviewMessage.Text = _packageInspection.HasProviderManifest
-            ? $"The package manifest was found at '{_packageInspection.ManifestEntryPath}'.\n\n{summary}\n\nWidget and recipe catalogs are available in their workspace sections."
-            : $"The package was scanned without extracting or executing its files.\n\n{summary}\n\nThis is a generic file inventory, not semantic widget discovery. To expose native widgets and recipes, the package needs a Lyra Studio manifest or a provider-specific discovery adapter.";
+        PreviewMessage.Text = _packageInspection.AdapterId is not null
+            ? $"Adapter: {_packageInspection.AdapterId}\n\n{summary}\n\nThe source adapter discovered widget and recipe definitions without running the plugin code. Open Widget Library or Recipe Studio to preview them locally."
+            : _packageInspection.HasProviderManifest
+                ? $"The provider manifest was found at '{_packageInspection.ManifestEntryPath}'.\n\n{summary}\n\nWidget and recipe catalogs are available in their workspace sections."
+                : $"The package was scanned without extracting or executing its files.\n\n{summary}\n\nThis is a generic file inventory, not semantic widget discovery. A compatible provider manifest or source adapter is required to expose widget and recipe catalogs.";
         StatusText.Text = _packageInspection.Warnings.Count == 0
             ? "Read-only package inventory"
             : string.Join(" · ", _packageInspection.Warnings);
@@ -326,11 +327,23 @@ public partial class MainWindow : Window
     private void ShowRecipe(RecipeDescriptor recipe)
     {
         _selectedWidget = null;
-        PreviewScroll.Visibility = Visibility.Collapsed;
-        SelectionInfo.Visibility = Visibility.Visible;
         PreviewTitle.Text = recipe.Name;
         PreviewSubtitle.Text = recipe.Description ?? recipe.Id;
-        PreviewMessage.Text = "Recipe metadata is loaded from the local provider package. Page/template parsing and editing are a later milestone.";
+        PreviewMessage.Text = "This recipe is previewed locally from the package source. No WordPress or Elementor runtime is started.";
+
+        if (_webViewReady && !string.IsNullOrWhiteSpace(recipe.PreviewHtml))
+        {
+            var html = _previewBuilder.BuildRecipeDocument(
+                recipe, _previewWidth, _packageInspection?.PreviewAssets);
+            PreviewBrowser.NavigateToString(html);
+            PreviewScroll.Visibility = Visibility.Visible;
+            SelectionInfo.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            PreviewScroll.Visibility = Visibility.Collapsed;
+            SelectionInfo.Visibility = Visibility.Visible;
+        }
 
         InspectorEmptyState.Visibility = Visibility.Collapsed;
         WidgetInspector.Visibility = Visibility.Collapsed;
@@ -338,7 +351,9 @@ public partial class MainWindow : Window
         RecipeInspectorTitle.Text = recipe.Name;
         RecipeInspectorDescription.Text = recipe.Description ?? recipe.Id;
         RecipeInspectorFormat.Text = $"ID: {recipe.Id}\nFormat: {recipe.Format}\nFormat version: {recipe.FormatVersion ?? "Not specified"}";
-        StatusText.Text = $"Local recipe · {recipe.Name} · {recipe.Format}";
+        StatusText.Text = string.IsNullOrWhiteSpace(recipe.PreviewHtml)
+            ? $"Local recipe metadata · {recipe.Name} · no compatible local document renderer"
+            : $"Local recipe preview · {recipe.Name} · {recipe.Format}";
     }
 
     private void PackageFilesList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -372,7 +387,8 @@ public partial class MainWindow : Window
 
         try
         {
-            var html = _previewBuilder.BuildDocument(_selectedWidget, _currentSettings, _previewWidth);
+            var html = _previewBuilder.BuildDocument(
+                _selectedWidget, _currentSettings, _previewWidth, _packageInspection?.PreviewAssets);
             PreviewBrowser.NavigateToString(html);
             PreviewScroll.Visibility = Visibility.Visible;
             SelectionInfo.Visibility = Visibility.Collapsed;

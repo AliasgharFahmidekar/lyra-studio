@@ -11,6 +11,8 @@ namespace LyraStudio.Services;
 /// </summary>
 public sealed class LocalWidgetPreviewBuilder
 {
+    private readonly LyraCorePreviewRenderer _sourceRenderer = new();
+
     private static readonly Regex TokenPattern = new(
         @"\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
@@ -18,10 +20,20 @@ public sealed class LocalWidgetPreviewBuilder
     public string BuildDocument(
         WidgetDescriptor widget,
         IReadOnlyDictionary<string, object?> settings,
-        int viewportWidth)
+        int viewportWidth) =>
+        BuildDocument(widget, settings, viewportWidth, null);
+
+    public string BuildDocument(
+        WidgetDescriptor widget,
+        IReadOnlyDictionary<string, object?> settings,
+        int viewportWidth,
+        ProviderPreviewAssets? previewAssets)
     {
         ArgumentNullException.ThrowIfNull(widget);
         ArgumentNullException.ThrowIfNull(settings);
+
+        if (_sourceRenderer.CanRender(widget.PreviewRendererId))
+            return _sourceRenderer.BuildWidgetDocument(widget, settings, viewportWidth, previewAssets);
 
         if (widget.Preview is null || string.IsNullOrWhiteSpace(widget.Preview.Html))
             return BuildMissingTemplateDocument(widget);
@@ -66,6 +78,12 @@ public sealed class LocalWidgetPreviewBuilder
             </html>
             """;
     }
+
+    public string BuildRecipeDocument(
+        RecipeDescriptor recipe,
+        int viewportWidth,
+        ProviderPreviewAssets? previewAssets) =>
+        _sourceRenderer.BuildRecipeDocument(recipe, viewportWidth, previewAssets);
 
     private static string ResolveValue(JsonElement root, string dottedPath)
     {

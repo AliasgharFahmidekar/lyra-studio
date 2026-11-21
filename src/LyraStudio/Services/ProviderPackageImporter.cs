@@ -36,10 +36,15 @@ public sealed class ProviderPackageImporter
     };
 
     private readonly ProviderManifestLoader _manifestLoader;
+    private readonly ProviderAdapterRegistry _adapterRegistry;
+    private readonly ProviderPreviewAssetsLoader _previewAssetsLoader = new();
 
-    public ProviderPackageImporter(ProviderManifestLoader? manifestLoader = null)
+    public ProviderPackageImporter(
+        ProviderManifestLoader? manifestLoader = null,
+        ProviderAdapterRegistry? adapterRegistry = null)
     {
         _manifestLoader = manifestLoader ?? new ProviderManifestLoader();
+        _adapterRegistry = adapterRegistry ?? new ProviderAdapterRegistry();
     }
 
     public async Task<ProviderPackageInspection> InspectAsync(
@@ -122,13 +127,39 @@ public sealed class ProviderPackageImporter
             await using var stream = entry.Open();
             manifest = await _manifestLoader.LoadAsync(stream, cancellationToken);
         }
-        else
+        ProviderPreviewAssets? previewAssets = null;
+        try
         {
-            warnings.Add("No Lyra Studio provider manifest was found. The package is shown as a generic file inventory; source-code discovery requires a compatible provider adapter.");
+            previewAssets = await _previewAssetsLoader.LoadAsync(path, files.Select(file => file.RelativePath).ToArray(), cancellationToken);
+        }
+        catch (Exception ex) when (ex is InvalidDataException or IOException or UnauthorizedAccessException)
+        {
+            warnings.Add("Provider preview assets were skipped: " + ex.Message);
+        }
+
+        string? adapterId = null;
+        if (manifest is null)
+        {
+            var discovery = await _adapterRegistry.DiscoverAsync(
+                path, files.Select(file => file.RelativePath).ToArray(), previewAssets, cancellationToken);
+            if (discovery is not null)
+            {
+                manifest = discovery.Manifest;
+                adapterId = discovery.AdapterId;
+                warnings.AddRange(discovery.Warnings);
+            }
+            else
+            {
+                warnings.Add("No Lyra Studio provider manifest or compatible source adapter was found. The package is shown as a generic file inventory.");
+            }
         }
 
         return new ProviderPackageInspection(
-            Path.GetFileNameWithoutExtension(path), path, manifest, manifestPath, files, warnings);
+            Path.GetFileNameWithoutExtension(path), path, manifest, manifestPath, files, warnings)
+        {
+            PreviewAssets = previewAssets,
+            AdapterId = adapterId
+        };
     }
 
     private async Task<ProviderPackageInspection> InspectDirectoryAsync(string root, CancellationToken cancellationToken)
@@ -191,13 +222,39 @@ public sealed class ProviderPackageImporter
 
             manifest = await _manifestLoader.LoadAsync(fullManifestPath, cancellationToken);
         }
-        else
+        ProviderPreviewAssets? previewAssets = null;
+        try
         {
-            warnings.Add("No Lyra Studio provider manifest was found. The folder is shown as a generic file inventory; source-code discovery requires a compatible provider adapter.");
+            previewAssets = await _previewAssetsLoader.LoadAsync(root, files.Select(file => file.RelativePath).ToArray(), cancellationToken);
+        }
+        catch (Exception ex) when (ex is InvalidDataException or IOException or UnauthorizedAccessException)
+        {
+            warnings.Add("Provider preview assets were skipped: " + ex.Message);
+        }
+
+        string? adapterId = null;
+        if (manifest is null)
+        {
+            var discovery = await _adapterRegistry.DiscoverAsync(
+                root, files.Select(file => file.RelativePath).ToArray(), previewAssets, cancellationToken);
+            if (discovery is not null)
+            {
+                manifest = discovery.Manifest;
+                adapterId = discovery.AdapterId;
+                warnings.AddRange(discovery.Warnings);
+            }
+            else
+            {
+                warnings.Add("No Lyra Studio provider manifest or compatible source adapter was found. The folder is shown as a generic file inventory.");
+            }
         }
 
         return new ProviderPackageInspection(
-            rootInfo.Name, root, manifest, manifestPath, files, warnings);
+            rootInfo.Name, root, manifest, manifestPath, files, warnings)
+        {
+            PreviewAssets = previewAssets,
+            AdapterId = adapterId
+        };
     }
 
     private static string NormalizePackagePath(string rawPath, bool isDirectory)
