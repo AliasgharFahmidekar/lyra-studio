@@ -1,0 +1,57 @@
+name: Windows build and installer
+
+on:
+  push:
+    branches: [main, "work/**"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup .NET SDK for CI build only
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Restore app and tests
+        run: dotnet restore tests/LyraStudio.Tests/LyraStudio.Tests.csproj --runtime win-x64
+      - name: Build desktop app
+        run: dotnet build src/LyraStudio/LyraStudio.csproj --configuration Release --runtime win-x64 --no-restore
+      - name: Run automated tests
+        run: dotnet test tests/LyraStudio.Tests/LyraStudio.Tests.csproj --configuration Release --runtime win-x64 --no-restore --logger "console;verbosity=normal"
+      - name: Publish self-contained Windows app
+        run: dotnet publish src/LyraStudio/LyraStudio.csproj --configuration Release --runtime win-x64 --no-restore --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o artifacts/win-x64
+      - name: Download offline WebView2 Runtime installer
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifacts/prerequisites | Out-Null
+          Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2124701" -OutFile "artifacts/prerequisites/MicrosoftEdgeWebView2RuntimeInstallerX64.exe"
+          $installer = "artifacts/prerequisites/MicrosoftEdgeWebView2RuntimeInstallerX64.exe"
+          if ((Get-Item $installer).Length -lt 50000000) {
+            throw "The offline WebView2 installer download appears incomplete."
+          }
+          $signature = Get-AuthenticodeSignature $installer
+          if ($signature.Status -ne "Valid" -or $signature.SignerCertificate.Subject -notlike "*Microsoft Corporation*") {
+            throw "The downloaded WebView2 standalone installer does not have a valid Microsoft signature."
+          }
+      - name: Install Inno Setup
+        run: choco install innosetup --yes --no-progress
+      - name: Build one-step installer
+        shell: pwsh
+        run: |
+          $compiler = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $compiler)) { throw "Inno Setup compiler was not found." }
+          & $compiler "installer/LyraStudio.iss"
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed with exit code $LASTEXITCODE." }
+      - name: Upload Windows installer
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: LyraStudio-Setup-win-x64
+          path: artifacts/installer/LyraStudio-Setup.exe
+          if-no-files-found: error
+          retention-days: 1
